@@ -1,0 +1,380 @@
+// src/components/GameShelf.tsx
+
+import React, { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import SoundManager from '../utils/SoundManager';
+
+export interface GameShelfProps {
+  textures?: string[];
+  width?: number | string;
+  height?: number | string;
+  frontWidthUnits?: number;   
+  frontHeightUnits?: number;  
+  onSelect?: (idx: number | null) => void;  
+  onLongPress?: (idx: number) => void;       
+}
+
+
+const FULL_W_3DS  = 3236;   // total pixel width of your 3DS scan
+const FULL_H_3DS  = 1360;   // total pixel height of your 3DS scan
+const BACK_3DS    = 1508;   // back cover width in px (3DS)
+const SPINE_3DS   = 120;    // spine width in px (3DS)
+const FRONT_3DS   = 1608;   // front cover width in px (3DS)
+
+
+const HEIGHT_RATIO_3DS = 0.73;
+
+const GameShelf: React.FC<GameShelfProps> = ({
+  textures = [],
+  width = '100%',
+  height = '100%',
+  frontWidthUnits = 8,
+  frontHeightUnits = 8,
+  onSelect,
+  onLongPress, 
+}) => {
+
+
+  const container = useRef<HTMLDivElement>(null);
+  const renderer  = useRef<THREE.WebGLRenderer>(null!);
+  const scene     = useRef<THREE.Scene>(null!);
+  const camera    = useRef<THREE.PerspectiveCamera>(null!);
+  const shelf     = useRef<THREE.Group>(null!);
+  const meshes    = useRef<THREE.Mesh[]>([]);
+  const urls      = useRef<string[]>([]);
+  const selected  = useRef<THREE.Mesh | null>(null);
+
+
+  const same = (a: string[], b: string[]) =>
+    a.length === b.length && a.every((v, i) => v === b[i]);
+
+
+  const hasPlayedBackground = useRef(false);
+
+  const panAccumulator = useRef(0);
+
+
+  const buildMats3DS = (tex: THREE.Texture): THREE.Material[] => {
+    (tex as any).colorSpace = THREE.SRGBColorSpace;
+    tex.minFilter       = THREE.LinearFilter;
+    tex.magFilter       = THREE.LinearFilter;
+    tex.generateMipmaps = false;
+    tex.anisotropy      = renderer.current.capabilities.getMaxAnisotropy();
+    tex.needsUpdate     = true;
+
+   
+    const BACK_PX   = BACK_3DS;   // 1508 px
+    const SPINE_PX  = SPINE_3DS;  //  120 px
+    const FRONT_PX  = FRONT_3DS;  // 1608 px
+    const FULL_W    = FULL_W_3DS; // 3236 px
+
+    const WIDTH_FACTOR = 0.50; 
+    const DEPTH_FACTOR = WIDTH_FACTOR; 
+
+
+    const NUDGE_SPINE_PX  = 53;
+    const NUDGE_BACK_PX   = 0;
+    const NUDGE_FRONT_PX  = 55;
+
+    const SCALED_SPINE_PX = SPINE_PX * (DEPTH_FACTOR / WIDTH_FACTOR);
+    const SPINE_LEFT_SHIFT = (SPINE_PX - SCALED_SPINE_PX) / 2 + NUDGE_SPINE_PX;
+
+    const U_SPINE_WIDTH  = SCALED_SPINE_PX / FULL_W;
+    const U_SPINE_OFFSET = (BACK_PX + SPINE_LEFT_SHIFT) / FULL_W;
+
+    const U_BACK_OFFSET  = NUDGE_BACK_PX / FULL_W;
+    const U_BACK_WIDTH   = BACK_PX / FULL_W;
+
+    const U_FRONT_OFFSET = (BACK_PX + SPINE_PX + NUDGE_FRONT_PX) / FULL_W;
+    const U_FRONT_WIDTH  = FRONT_PX / FULL_W;
+
+  
+    const slice = (u: number, ur: number, flip = false) => {
+      const t2 = tex.clone();
+      t2.offset.set(u, 0);
+      t2.repeat.set(flip ? -ur : ur, 1);
+      if (flip) t2.offset.x += ur; 
+      return t2;
+    };
+
+    const makeMat = (map?: THREE.Texture) =>
+      map
+        ? new THREE.MeshBasicMaterial({ map })
+        : new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    return [
+      makeMat(),                                         
+      makeMat(slice(U_SPINE_OFFSET, U_SPINE_WIDTH)),      
+      makeMat(),                                          
+      makeMat(),                                          
+      makeMat(slice(U_FRONT_OFFSET, U_FRONT_WIDTH)),      
+      makeMat(slice(U_BACK_OFFSET, U_BACK_WIDTH)),        
+    ];
+  };
+
+
+
+  const WIDTH_FACTOR  = 0.50;               
+  const DEPTH_FACTOR  = WIDTH_FACTOR;       
+  const PANEL_RATIO   = 4.875 / 5.875;      
+
+  const _BASE_W = FRONT_3DS * (frontWidthUnits / FRONT_3DS);
+  const _BASE_D = SPINE_3DS * (frontWidthUnits / FRONT_3DS);
+
+  const BOX_W = _BASE_W * WIDTH_FACTOR;
+  const BOX_D = _BASE_D * DEPTH_FACTOR;
+  const BOX_H = BOX_W  * PANEL_RATIO;
+
+  const GAP   = BOX_W * 0.25;
+  const HOVER = BOX_H * 0.03;
+
+  /* ───────────────────────────────────────────────────────────────────────── */
+  /* 4. INIT: scene + camera + pointer + hover  (run only once, on mount)     */
+  useEffect(() => {
+    if (!container.current) return;
+    if (textures.length === 0) return; // skip initialization if no covers
+
+    // Renderer
+    renderer.current = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.current.setPixelRatio(Math.min(2, window.devicePixelRatio));
+    container.current.appendChild(renderer.current.domElement);
+
+    // Scene & Camera
+    scene.current = new THREE.Scene();
+    camera.current = new THREE.PerspectiveCamera(35, 1, 0.1, 1000);
+    camera.current.position.set(0, 0, BOX_H * 3.0);
+    camera.current.lookAt(0, 0, 0);
+
+    // Shelf group
+    shelf.current = new THREE.Group();
+    scene.current.add(shelf.current);
+
+    // Resize handling
+    const resize = () => {
+      if (!container.current) return;
+      const { clientWidth: w, clientHeight: h } = container.current;
+      renderer.current.setSize(w, h);
+      camera.current.aspect = w / h;
+      camera.current.updateProjectionMatrix();
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    /* Pointer interaction + Raycaster */
+    const ray     = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let dragging = false;
+    let mode: 'rotate' | 'pan' | null = null;
+    let lastX = 0;
+    let longTid: number | null = null;
+    let moved = false;
+
+    const clearSelect = (): void => {
+      if (!selected.current) return;
+      selected.current.scale.set(1, 1, 1);
+      selected.current.rotation.y = 0;
+      selected.current = null;
+      onSelect?.(null);
+    };
+
+    const cancelLong = (): void => {
+      if (longTid !== null) {
+        clearTimeout(longTid);
+        longTid = null;
+      }
+    };
+
+    // Compute swipeThreshold = one cover’s width + gap, in world units.
+    let swipeThreshold = 0;
+
+    // Attach pointer events to this renderer’s canvas
+    const canvas = renderer.current.domElement;
+
+    const onPointerDown = (e: PointerEvent): void => {
+      dragging = true;
+      moved = false;
+      lastX = e.clientX;
+      cancelLong();
+
+      // Play background music once on first "user gesture"
+      if (!hasPlayedBackground.current) {
+        SoundManager.playBackground();
+        hasPlayedBackground.current = true;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      ray.setFromCamera(pointer, camera.current);
+
+      const hit = ray.intersectObjects(meshes.current, true)[0]?.object as THREE.Mesh | undefined;
+      if (hit) {
+        if (selected.current !== hit) {
+          clearSelect();
+          selected.current = hit;
+          selected.current.scale.set(1.15, 1.15, 1.15);
+          onSelect?.(meshes.current.indexOf(hit));
+        }
+        mode = 'rotate';
+
+        // ← PLAY THE 3D‐OBJECT “SELECT” SOUND HERE:
+        SoundManager.playObjectSelect();
+
+        longTid = window.setTimeout(() => {
+          longTid = null;
+          if (!moved) onLongPress?.(meshes.current.indexOf(hit));
+        }, 700);
+      } else {
+        clearSelect();
+        mode = 'pan';
+
+        // Compute swipeThreshold if not set and we have at least one mesh
+        if (swipeThreshold === 0 && meshes.current.length > 0) {
+          const firstMesh = meshes.current[0];
+          const w = firstMesh.userData.actualWidth as number;
+          swipeThreshold = w + frontWidthUnits * 0.25; // world units: width + gap
+        }
+      }
+    };
+    canvas.addEventListener('pointerdown', onPointerDown);
+
+    const onPointerMove = (e: PointerEvent): void => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      if (Math.abs(dx) > 4) moved = true;
+      if (moved) cancelLong();
+
+      if (mode === 'rotate' && selected.current) {
+        selected.current.rotation.y += dx * 0.012;
+      } else if (mode === 'pan') {
+        // Accumulate absolute movement in world units (0.015 * dx)
+        panAccumulator.current += Math.abs(dx) * 0.015;
+        if (swipeThreshold > 0 && panAccumulator.current >= swipeThreshold) {
+          panAccumulator.current -= swipeThreshold;
+          SoundManager.playPan();
+        }
+        shelf.current.position.x += dx * 0.015;
+      }
+    };
+    const onPointerUp = (): void => {
+      dragging = false;
+      cancelLong();
+    };
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup',   onPointerUp);
+    canvas.addEventListener('pointerleave', onPointerUp);
+
+    /* Hover animation loop */
+    let stopAnimation = false;
+    const clock = new THREE.Clock();
+    const renderLoop = () => {
+      if (stopAnimation) return;
+      requestAnimationFrame(renderLoop);
+      const t = clock.getElapsedTime();
+      meshes.current.forEach(m => {
+        const ph = m.userData.ph as number;
+        m.position.y = (m.userData.homeY || 0) + Math.sin(t * 1.2 + ph) * HOVER;
+      });
+      renderer.current.render(scene.current, camera.current);
+    };
+    renderLoop();
+
+    return () => {
+      stopAnimation = true;
+      window.removeEventListener('resize', resize);
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointermove', onPointerMove);
+      canvas.removeEventListener('pointerup',   onPointerUp);
+      canvas.removeEventListener('pointerleave', onPointerUp);
+      renderer.current.dispose();
+    };
+  }, []); // ← run only once on mount
+
+  /* ───────────────────────────────────────────────────────────────────────── */
+  /* 5. TEXTURE LOADING + MESH UPDATE (runs whenever `textures` actually changes) */
+  useEffect(() => {
+    if (!renderer.current) return;
+    if (same(urls.current, textures)) return;
+    urls.current = textures.slice();
+
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+
+    textures.forEach((url, i) => {
+      /* 5a. Compute box dims (3DS-only) */
+      const scaleW = frontWidthUnits / FRONT_3DS;
+      const scaleH = frontHeightUnits / (FULL_H_3DS * HEIGHT_RATIO_3DS);
+      const scale  = Math.min(scaleW, scaleH);
+
+      const boxW = FRONT_3DS * scale * WIDTH_FACTOR;   // new width
+      const boxH = boxW * PANEL_RATIO;                 // derived height
+      const boxD = SPINE_3DS * scale * DEPTH_FACTOR;   // thinner spine
+
+      /* 5b. Create or reuse mesh */
+      if (!meshes.current[i]) {
+        const geo = new THREE.BoxGeometry(boxW, boxH, boxD);
+        const m = new THREE.Mesh(geo);
+        m.userData.ph = Math.random() * Math.PI * 2;
+        shelf.current.add(m);
+        meshes.current[i] = m;
+      }
+      const mesh = meshes.current[i];
+
+      /* 5c. Load texture if URL changed */
+      if (mesh.userData.url !== url) {
+        loader.load(
+          url,
+          (tex) => {
+            mesh.material = buildMats3DS(tex);
+            mesh.userData.url = url;
+          },
+          undefined,
+          () => {
+            mesh.material = new THREE.MeshBasicMaterial({ color: 0x555555 });
+            mesh.userData.url = url;
+          }
+        );
+      }
+
+      /* 5d. Store dims for layout */
+      mesh.userData.actualWidth  = boxW;
+      mesh.userData.actualHeight = boxH;
+      mesh.userData.actualDepth  = boxD;
+    });
+
+    // Remove any extra meshes
+    while (meshes.current.length > textures.length) {
+      const m = meshes.current.pop()!;
+      shelf.current.remove(m);
+      (m.material as any).dispose?.();
+      m.geometry.dispose();
+    }
+
+    // Layout: center row with gaps
+    const all = meshes.current;
+    const totalWidth =
+      all.reduce((sum, m) => sum + ((m.userData.actualWidth as number) || frontWidthUnits), 0) +
+      Math.max(0, all.length - 1) * (frontWidthUnits * 0.25);
+
+    let cursor = -totalWidth / 2;
+    all.forEach((m) => {
+      const w = (m.userData.actualWidth as number) || frontWidthUnits;
+      const half = w / 2;
+      m.position.set(cursor + half, 0, 0);
+      m.userData.homeY = m.position.y; // baseline
+      cursor += w + frontWidthUnits * 0.25;
+    });
+  }, [textures, frontWidthUnits, frontHeightUnits]);
+
+  /* ───────────────────────────────────────────────────────────────────────── */
+  /* 6. Render container div                                                  */
+  return (
+    <div
+      ref={container}
+      style={{ width, height, position: 'relative', overflow: 'hidden' }}
+    />
+  );
+};
+
+export default GameShelf;

@@ -40,3 +40,4 @@ emulators/*
 !emulators/.gitkeep
 roms/*
 !roms/.gitkeep
+/backend/covers

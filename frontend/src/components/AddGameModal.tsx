@@ -1,4 +1,3 @@
-
 // src/components/AddGameModal.tsx
 
 import React, { useEffect, useRef, useState } from "react";
@@ -25,14 +24,12 @@ const AddGameModal: React.FC<AddGameModalProps> = ({
   onSubmit,
   onDismiss,
 }) => {
-
   const [form, setForm] = useState<GameForm>({
     title: initial.title ?? "",
     coverFile: initial.coverFile ?? null,
     romPath: initial.romPath ?? "",
     emuPath: initial.emuPath ?? "",
   });
-
 
   const [preview, setPreview] = useState<string | null>(
     initial.coverFile ? URL.createObjectURL(initial.coverFile) : null
@@ -45,11 +42,9 @@ const AddGameModal: React.FC<AddGameModalProps> = ({
     initial.emuPath ? initial.emuPath.split(/[/\\]/).pop()! : ""
   );
 
-
   const coverRef = useRef<HTMLInputElement>(null);
   const romRef = useRef<HTMLInputElement>(null);
   const emuRef = useRef<HTMLInputElement>(null);
-
 
   useEffect(() => {
     const s = document.createElement("style");
@@ -64,7 +59,6 @@ const AddGameModal: React.FC<AddGameModalProps> = ({
       document.head.removeChild(s);
     };
   }, []);
-
 
   const overlay: React.CSSProperties = {
     position: "fixed",
@@ -121,7 +115,6 @@ const AddGameModal: React.FC<AddGameModalProps> = ({
           {mode === "add" ? "Add Game" : "Edit Game"}
         </h2>
 
-        
         <div
           style={{
             display: "flex",
@@ -160,7 +153,6 @@ const AddGameModal: React.FC<AddGameModalProps> = ({
           )}
         </div>
 
-        
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={label}>Title</div>
           <input
@@ -172,7 +164,6 @@ const AddGameModal: React.FC<AddGameModalProps> = ({
             placeholder="Enter game title"
           />
         </div>
-
 
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={label}>ROM Path</div>
@@ -212,7 +203,6 @@ const AddGameModal: React.FC<AddGameModalProps> = ({
           )}
         </div>
 
-
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={label}>Emulator Path</div>
           <button
@@ -251,7 +241,6 @@ const AddGameModal: React.FC<AddGameModalProps> = ({
           )}
         </div>
 
-
         <div
           style={{
             display: "flex",
@@ -271,10 +260,16 @@ const AddGameModal: React.FC<AddGameModalProps> = ({
           </button>
           <button
             style={neonBtn(
-              !form.title || !form.coverFile || !form.romPath || !form.emuPath
+              !form.title ||
+                (mode === "add" && !form.coverFile) ||
+                !form.romPath ||
+                !form.emuPath
             )}
             disabled={
-              !form.title || !form.coverFile || !form.romPath || !form.emuPath
+              !form.title ||
+              (mode === "add" && !form.coverFile) ||
+              !form.romPath ||
+              !form.emuPath
             }
             onClick={() => {
               SoundManager.playUISelect();

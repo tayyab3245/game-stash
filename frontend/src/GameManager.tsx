@@ -10,9 +10,7 @@ import Overlay from "./components/Overlay";
 import SoundManager from "./utils/SoundManager";
 
 export default function GameManager() {
-
   const { games, loadGames, API } = useGames();
-
 
   const [selIdx, setSelIdx] = useState<number | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -20,7 +18,6 @@ export default function GameManager() {
   const [updating, setUpdating] = useState(false);
   const [flashOk, setFlashOk] = useState(false);
   const [overlayOpen, setOverlayOpen] = useState(false);
-
 
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [modalOpen, setModalOpen] = useState(false);
@@ -30,7 +27,6 @@ export default function GameManager() {
   const [romExists, setRomExists] = useState(false);
   const [emuExists, setEmuExists] = useState(false);
 
-
   const [vw, setVw] = useState(() => window.innerWidth);
   useEffect(() => {
     const onResize = () => setVw(window.innerWidth);
@@ -38,11 +34,9 @@ export default function GameManager() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-
   useEffect(() => {
     loadGames();
   }, [loadGames]);
-
 
   const selGame: Game | null = selIdx === null ? null : games[selIdx] || null;
   useEffect(() => {
@@ -56,38 +50,30 @@ export default function GameManager() {
 
   useEffect(() => {
     if (!selGame) {
-
       setRomExists(false);
       setEmuExists(false);
       return;
     }
 
-
-    const maybeAPI = (window as any).launcherAPI;
-    if (!maybeAPI || typeof maybeAPI.autoDetect !== "function") {
-      console.warn("launcherAPI.autoDetect is not available in this environment.");
+    const api = (window as any).launcherAPI;
+    if (!api || typeof api.exists !== "function") {
+      console.warn("launcherAPI.exists is not available in this environment.");
       setRomExists(false);
       setEmuExists(false);
       return;
     }
 
-    const requestedPlatform: "3DS" | "Switch" =
-      selGame.platform === "Switch" ? "Switch" : "3DS";
-
-    ;(window as any)
-      .launcherAPI.autoDetect(selGame.title, requestedPlatform)
-      .then((result: { romPath: string | null; emuPath: string | null }) => {
-        console.log("autoDetect result:", result);
-        setRomExists(!!result.romPath);
-        setEmuExists(!!result.emuPath);
+    Promise.all([api.exists(selGame.romPath), api.exists(selGame.emuPath)])
+      .then(([romOk, emuOk]) => {
+        setRomExists(romOk);
+        setEmuExists(emuOk);
       })
       .catch((err: any) => {
-        console.error("autoDetect failed:", err);
+        console.error("exists check failed:", err);
         setRomExists(false);
         setEmuExists(false);
       });
   }, [selGame]);
-
 
   const refreshAndClear = () => {
     setSelIdx(null);
@@ -99,7 +85,7 @@ export default function GameManager() {
   const createOrUpdateGame = async (formData: GameForm) => {
     try {
       const payload = new FormData();
-      payload.append("platform", "Switch");
+      payload.append("platform", "3DS");
       payload.append("title", formData.title);
       payload.append("romPath", formData.romPath);
       payload.append("emuPath", formData.emuPath);
@@ -149,13 +135,11 @@ export default function GameManager() {
       .then(refreshAndClear)
       .catch((e) => window.alert(`Error: ${e.message}`));
 
-
   const handleSelectFromShelf = (i: number | null) => {
     setSelIdx(i);
     setEditMode(false);
     setOverlayOpen(i !== null);
     if (i !== null) {
-
       SoundManager.playObjectSelect();
     }
   };
@@ -166,7 +150,6 @@ export default function GameManager() {
     setOverlayOpen(true);
     SoundManager.playUISelect();
   };
-
 
   const SHELF_H = Math.min(400, vw * 0.6);
   const titleChanged = editTitle.trim() !== (selGame?.title.trim() ?? "").trim();
@@ -209,7 +192,6 @@ export default function GameManager() {
 
       <div style={styles.divider} />
 
-
       {selGame && overlayOpen && (
         <Overlay
           flash={flashOk}
@@ -222,7 +204,7 @@ export default function GameManager() {
             SoundManager.playUISelect();
             setModalMode("edit");
             setInitialData({
-              title: selGame.title,
+              title: editTitle,
               coverFile: null,
               romPath: selGame.romPath,
               emuPath: selGame.emuPath,
@@ -244,28 +226,21 @@ export default function GameManager() {
           onPlay={() => {
             SoundManager.playUISelect();
 
-
             const api = (window as any).launcherAPI;
-            if (!api || typeof api.autoDetect !== "function" || typeof api.play !== "function") {
+            if (!api || typeof api.exists !== "function" || typeof api.play !== "function") {
               console.error("launcherAPI is not available or missing methods.");
               window.alert("Cannot launch: launcherAPI is not available.");
               return;
             }
 
-
-            const requestedPlatform: "3DS" | "Switch" =
-              selGame.platform === "Switch" ? "Switch" : "3DS";
-
-            api
-              .autoDetect(selGame.title, requestedPlatform)
-              .then((result: { romPath: string | null; emuPath: string | null }) => {
-                const { romPath, emuPath } = result;
-                if (!romPath || !emuPath) {
+            Promise.all([api.exists(selGame.romPath), api.exists(selGame.emuPath)])
+              .then(([romOk, emuOk]) => {
+                if (!romOk || !emuOk) {
                   window.alert("Error launching emulator: ROM or Emulator missing");
-                  return;
+                  return null;
                 }
-                console.log("Launching with:", { emuPath, romPath });
-                return api.play(emuPath, romPath);
+                console.log("Launching with:", { emuPath: selGame.emuPath, romPath: selGame.romPath });
+                return api.play(selGame.emuPath, selGame.romPath);
               })
               .then((playResult: any) => {
                 if (playResult && playResult.ok === false) {
@@ -274,13 +249,12 @@ export default function GameManager() {
                 }
               })
               .catch((err: any) => {
-                console.error("IPC autoDetect/play error:", err);
+                console.error("IPC play error:", err);
                 window.alert("Error launching emulator (see console).");
               });
           }}
         />
       )}
-
 
       {games.length > 0 && (
         <div style={{ width: "100%", height: SHELF_H }}>
@@ -293,7 +267,6 @@ export default function GameManager() {
           />
         </div>
       )}
-
 
       {modalOpen && (
         <AddGameModal

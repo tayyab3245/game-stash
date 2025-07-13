@@ -10,8 +10,8 @@ const DARK_UNIFIED = {
   surfaceSolid: '#495057',
   surfaceSecondary: '#343a40',
   
-  // Original legacy app background
-  appBg: 'linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%)',
+  // Original legacy app background (darkened)
+  appBg: 'linear-gradient(135deg, #050505 0%, #0f0f1a 50%, #0a0f1c 100%)',
   
   // === UNIFIED MATTE PLASTIC LIGHTING ===
   // Subtle rim light on all elements (not bright!)
@@ -337,7 +337,7 @@ export const darkStyles = {
     container: {
       position: 'absolute' as const,
       left: 0,
-      top: 0,
+      top: '10px',
       bottom: '32px',          // space for CommandBar
       borderRadius: DARK_UNIFIED.borderRadiusLarge,
       background: DARK_UNIFIED.surface,

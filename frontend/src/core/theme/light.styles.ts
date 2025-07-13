@@ -333,12 +333,12 @@ export const lightStyles = {
     arrowColor: LIGHT_UNIFIED.textDark,
   },
 
-  // === BACKGROUND CONTAINER (CLEAN - NO LIP) ===
+  // === BACKGROUND CONTAINER (CLEAN - WITH HEADER SPACING) ===
   backgroundContainer: {
     container: {
       position: 'absolute' as const,
       left: 0,
-      top: 0,
+      top: '10px',            // Add spacing below header (header is ~120px + 40px margin)
       bottom: '32px',          // space for CommandBar
       borderRadius: LIGHT_UNIFIED.borderRadiusLarge,
       background: LIGHT_UNIFIED.surface,

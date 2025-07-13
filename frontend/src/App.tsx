@@ -1,6 +1,6 @@
 import React from 'react';
-import GameManager from './GameManager';
+import Main from './Main';
 
 export default function App() {
-  return <GameManager />;
+  return <Main />;
 }

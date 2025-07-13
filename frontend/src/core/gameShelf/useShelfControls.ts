@@ -30,7 +30,7 @@ export default function useShelfControls(opts: ShelfControlParams) {
   // holdDir now tracks x and y movement
   const holdDir = useRef<{ x: -1 | 0 | 1; y: -1 | 0 | 1 }>({ x: 0, y: 0 });
 
-  /* NEW Grid-Aware scroll/arrow helper */
+  /* Grid-Aware navigation with proper legacy logic */
   const STEP = () => {
     const playable = opts.meshes.current.filter(m => !m.userData.isAdd);
     if (!playable.length) return;
@@ -44,7 +44,7 @@ export default function useShelfControls(opts: ShelfControlParams) {
     const dir = holdDir.current;
     let nextIdx = current;
 
-    // Handle navigation based on the current layout
+    // Handle navigation based on the current layout (CRITICAL: Use legacy logic)
     if (rows === 2) {
       // 2-Row (Column-Major) Navigation
       const curCol = Math.floor(current / rows);

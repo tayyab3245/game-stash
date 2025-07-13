@@ -78,7 +78,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
   const prevRows = useRef<1 | 2>(rows);
   const clock = useRef<THREE.Clock>(new THREE.Clock());
 
-  // Complete selection system from legacy GameShelf
+  // Fixed-selector selection system with smooth animation
   const selectMesh = (mesh: THREE.Mesh | null, playSound?: boolean) => {
     // Clear old selection
     if (selectedRef.current) {
@@ -102,9 +102,9 @@ const GameShelf: React.FC<GameShelfProps> = ({
     const outline = mesh.userData.outline as THREE.Object3D;
     if (outline) outline.visible = true;
     
-    // Set the target X position for panning
+    // Set target for smooth animation to center the selected game
     const targetX = -mesh.position.x;
-    shelfTargetX.current = clamp(targetX, bounds.current.min, bounds.current.max);
+    shelfTargetX.current = clamp(targetX, bounds.current.min, 0); // Left-anchored bounds
     
     // Update center index and notify parent
     currentCenterIdx.current = meshes.current.indexOf(mesh);
@@ -236,7 +236,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
         g.scale.set(pulse, pulse, pulse);
       }
 
-      // 4. Smooth Shelf Panning
+      // 4. Smooth Shelf Panning (restored for better UX)
       if (shelf.current) {
         const currentX = shelf.current.position.x;
         const targetX = shelfTargetX.current;
@@ -428,9 +428,12 @@ const GameShelf: React.FC<GameShelfProps> = ({
     layoutInfo.current.cols = cols;
     const rowW = cols * itemW + (cols - 1) * gapX + padLeft + padRight;
     
-    // Calculate bounds for panning
-    bounds.current.min = -((cols - 1) / 2) * (itemW + gapX) - padLeft;
-    bounds.current.max = ((cols - 1) / 2) * (itemW + gapX) + padRight;
+    // Calculate bounds for left-anchored scrolling: 
+    // - Max bound is 0 (first games at left edge)
+    // - Min bound allows scrolling left to see all games
+    const totalWidth = (cols - 1) * (itemW + gapX);
+    bounds.current.min = -totalWidth - padLeft; // Can scroll left to see all games
+    bounds.current.max = 0; // Cannot scroll right past the first game
     
     // Check for row switch to trigger animation
     const rowSwitch = prevRows.current !== rows;
@@ -450,10 +453,13 @@ const GameShelf: React.FC<GameShelfProps> = ({
         c = i % cols;
       }
       
-      const xOffset = (padLeft - padRight) / 2;
-      const x = (c - (cols - 1) / 2) * (itemW + gapX) + xOffset;
+      // Left-anchored positioning: first column starts at x=0, subsequent columns extend rightward
+      const x = c * (itemW + gapX) + padLeft;
       const yOffset = (padTop - padBottom) / 2;
       const y = ((rows - 1) / 2 - r) * (itemH + gapY) - yOffset;
+      
+      // Debug logging to see the layout
+      console.log(`Item ${i} (${m.userData.isAdd ? 'ADD' : 'GAME'}): r=${r}, c=${c}, x=${x.toFixed(2)}, y=${y.toFixed(2)}`);
       
       return {
         position: new THREE.Vector3(x, y, 0),
@@ -508,11 +514,16 @@ const GameShelf: React.FC<GameShelfProps> = ({
     // Update camera position for current layout
     camera.current.position.z = BOX_H * (rows === 1 ? 4.0 : 6.8);
     
-    // Auto-select first playable game if none selected
+    // Auto-select first playable game if none selected and set target for smooth animation
     if (!selectedRef.current && all.length > 0) {
       const firstPlayable = all.find(m => !m.userData.isAdd);
       if (firstPlayable) {
         selectMesh(firstPlayable, false);
+        // Set initial shelf position (no animation on first load)
+        const targetShelfX = -firstPlayable.position.x;
+        const clampedX = clamp(targetShelfX, bounds.current.min, 0);
+        shelf.current.position.x = clampedX;
+        shelfTargetX.current = clampedX;
       }
     }
 

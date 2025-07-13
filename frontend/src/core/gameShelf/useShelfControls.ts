@@ -30,7 +30,7 @@ export default function useShelfControls(opts: ShelfControlParams) {
   // holdDir now tracks x and y movement
   const holdDir = useRef<{ x: -1 | 0 | 1; y: -1 | 0 | 1 }>({ x: 0, y: 0 });
 
-  /* Grid-Aware navigation with proper legacy logic */
+  /* Fixed-Selector Navigation with smooth animation: Games scroll underneath a centered selector */
   const STEP = () => {
     const playable = opts.meshes.current.filter(m => !m.userData.isAdd);
     if (!playable.length) return;
@@ -44,37 +44,55 @@ export default function useShelfControls(opts: ShelfControlParams) {
     const dir = holdDir.current;
     let nextIdx = current;
 
-    // Handle navigation based on the current layout (CRITICAL: Use legacy logic)
+    // Handle navigation based on the current layout
     if (rows === 2) {
-      // 2-Row (Column-Major) Navigation
+      // 2-Row (Column-Major) Navigation - FIXED VERSION
       const curCol = Math.floor(current / rows);
       const curRow = current % rows;
-      if (dir.x === 1) { // Right
-        nextIdx = current + rows;
-      } else if (dir.x === -1) { // Left
-        nextIdx = current - rows;
-      } else if (dir.y === 1) { // Down
-        if (curRow < rows - 1) nextIdx = current + 1;
-      } else if (dir.y === -1) { // Up
-        if (curRow > 0) nextIdx = current - 1;
+      console.log(`2-Row Navigation: current=${current}, curCol=${curCol}, curRow=${curRow}, dir=${JSON.stringify(dir)}, totalCols=${cols}`);
+      
+      if (dir.x === 1) { // Right (next column)
+        const nextCol = curCol + 1;
+        if (nextCol < cols) {
+          nextIdx = nextCol * rows + curRow; // Same row, next column
+        }
+      } else if (dir.x === -1) { // Left (previous column)  
+        const prevCol = curCol - 1;
+        if (prevCol >= 0) {
+          nextIdx = prevCol * rows + curRow; // Same row, previous column
+        }
+      } else if (dir.y === 1) { // Down (next row in same column)
+        const nextRow = curRow + 1;
+        if (nextRow < rows) {
+          nextIdx = curCol * rows + nextRow; // Next row, same column
+        }
+      } else if (dir.y === -1) { // Up (previous row in same column)
+        const prevRow = curRow - 1;
+        if (prevRow >= 0) {
+          nextIdx = curCol * rows + prevRow; // Previous row, same column
+        }
       }
     } else {
       // 1-Row (Row-Major) Navigation
-      if (dir.x === 1) { // Right
+      console.log(`1-Row Navigation: current=${current}, dir=${JSON.stringify(dir)}`);
+      if (dir.x === 1) { // Right (next game)
         nextIdx = current + 1;
-      } else if (dir.x === -1) { // Left
+      } else if (dir.x === -1) { // Left (previous game)
         nextIdx = current - 1;
       }
     }
 
     // Make sure the new index is within the valid range of playable items
     nextIdx = clamp(nextIdx, 0, playable.length - 1);
+    console.log(`Navigation: ${current} → ${nextIdx} (clamped to 0-${playable.length - 1})`);
 
     if (nextIdx !== current) {
-      opts.selectMesh(playable[nextIdx], true);
-      opts.currentCenterIdx.current = opts.meshes.current.indexOf(
-        playable[nextIdx]
-      );
+      // Select the new game - this will trigger smooth animation via selectMesh
+      const newGame = playable[nextIdx];
+      opts.selectMesh(newGame, true);
+      
+      // Update current center index
+      opts.currentCenterIdx.current = opts.meshes.current.indexOf(newGame);
     }
   };
 
@@ -92,15 +110,17 @@ export default function useShelfControls(opts: ShelfControlParams) {
     }
   };
 
-  // 2D nearest-to-center helper
-  const findNearestToCenter = () => {
+  // Find the game closest to center (x=0) for fixed-selector mode
+  const findGameAtCenter = () => {
     let nearest: (THREE.Mesh & { userData: any }) | null = null;
     let minDistanceSq = Infinity;
-    const targetX = -opts.shelf.current.position.x;
+    const targetX = 0; // Fixed center position
     const targetY = 0;
     opts.meshes.current.forEach((m) => {
       if ((m as any).userData.isAdd) return;
-      const dx = m.position.x - targetX;
+      // Calculate world position of the mesh (mesh position + shelf position)
+      const worldX = m.position.x + opts.shelf.current.position.x;
+      const dx = worldX - targetX;
       const dy = m.position.y - targetY;
       const dSq = dx * dx + dy * dy;
       if (dSq < minDistanceSq) {
@@ -146,9 +166,9 @@ export default function useShelfControls(opts: ShelfControlParams) {
 
     const clearSelect = () => opts.selectMesh(null);
 
-    // autoSelectCentered uses 2D-aware logic
+    // Fixed-selector mode: find which game is centered when pointer interaction starts
     const autoSelectCentered = () => {
-      const nearest = findNearestToCenter();
+      const nearest = findGameAtCenter();
       if (nearest && nearest !== opts.selectedRef.current) {
         opts.selectMesh(nearest, false);
       }
@@ -231,22 +251,20 @@ export default function useShelfControls(opts: ShelfControlParams) {
         opts.selectedRef.current.rotation.y += dx * 0.012;
       } else if (mode === 'pan') {
         const newShelfX = opts.shelf.current.position.x + dx * 0.015;
-        const clampedX = clamp(newShelfX, opts.bounds.current.min, opts.bounds.current.max);
+        // Left-anchored scrolling: can only scroll left (negative), not right (positive)
+        const clampedX = clamp(newShelfX, opts.bounds.current.min, 0);
         opts.shelf.current.position.x = clampedX;
 
-        // Make the background follow the shelf EXACTLY, removing the overscroll effect.
+        // Make the background follow the shelf
         if (opts.backgroundRef.current) {
           opts.backgroundRef.current.setPosition(clampedX * opts.pxPerWorld.current);
         }
 
-        // 2D-aware selection logic
-        const nearestMesh = findNearestToCenter();
-        if (nearestMesh) {
-          const nearestIdx = opts.meshes.current.indexOf(nearestMesh);
-          if (nearestIdx !== -1 && nearestIdx !== opts.currentCenterIdx.current) {
-            SoundManager.playPan();
-            opts.selectMesh(nearestMesh, false);
-          }
+        // Find which game is now closest to the center (x=0) and select it
+        const centerMesh = findGameAtCenter();
+        if (centerMesh && centerMesh !== opts.selectedRef.current) {
+          SoundManager.playPan();
+          opts.selectMesh(centerMesh, false);
         }
       }
     };
@@ -256,8 +274,8 @@ export default function useShelfControls(opts: ShelfControlParams) {
       cancelLong();
 
       if (mode === 'pan') {
-        // 2D-aware selection logic
-        const nearestMesh = findNearestToCenter();
+        // Fixed-selector mode: find which game is now centered and select it
+        const nearestMesh = findGameAtCenter();
         if (nearestMesh && !(nearestMesh as any).userData.isAdd) {
           opts.selectMesh(nearestMesh, true);
         }

@@ -35,8 +35,10 @@ export const getStyles = (t: Theme): StyleMap => ({
        `linear-gradient(-35deg,rgba(255,255,255,.07) 0%,transparent 60%),` +
        `linear-gradient(180deg,${t.panelTop} 0%,${t.panelBot} 100%)`,
     backgroundBlendMode: 'soft-light',
-    /* reuse the global shadow token so dark & light match */
-    boxShadow: t.shadow,
+    /* Plastic-like rim lighting for consistency */
+    boxShadow: t.mode === 'light'
+      ? 'inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.1)'
+      : 'inset 0 2px 3px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.40), 0 6px 12px rgba(0,0,0,0.30)',
     color: t.text,
     fontFamily: '"Nunito", sans-serif',
   },

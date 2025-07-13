@@ -60,7 +60,7 @@ const ThemeToggleControl: React.FC<ThemeToggleControlProps> = ({
               : "rotate(45deg) scale(0.55)",
           opacity: mode === "light" ? 1 : 0,
           transition:
-            "opacity .18s ease-out, transform .5s cubic-bezier(.4,1.7,.6,1)",
+            "opacity .8s ease-out, transform 1.2s cubic-bezier(.4,1.7,.6,1)",
         }}
       >
         {Array.from({ length: RAY_COUNT }).map((_, i) => (
@@ -84,7 +84,7 @@ const ThemeToggleControl: React.FC<ThemeToggleControlProps> = ({
         fill="currentColor"
         style={{
           opacity: mode === "light" ? 1 : 0,
-          transition: "opacity .22s linear",
+          transition: "opacity .8s linear",
           filter:
             mode === "light"
               ? "drop-shadow(0 0 6px rgba(255,255,255,.5))"
@@ -100,7 +100,7 @@ const ThemeToggleControl: React.FC<ThemeToggleControlProps> = ({
         strokeWidth={2}
         style={{
           opacity: mode === "light" ? 0 : 1,
-          transition: "opacity .22s linear",
+          transition: "opacity .8s linear",
         }}
       />
     </svg>

@@ -100,7 +100,9 @@ const AddGameModal: React.FC<AddGameModalProps> = ({
     gap: 28,
     color: theme.text,
     background: `linear-gradient(180deg, ${theme.panelTop} 0%, ${theme.panelBot} 100%)`,
-    boxShadow: theme.shadow + ', 0 8px 32px 0 rgba(0,0,0,0.18)',
+    boxShadow: theme.mode === 'light' 
+      ? 'inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.1), 0 8px 32px 0 rgba(0,0,0,0.18)'
+      : 'inset 0 2px 3px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.40), 0 6px 12px rgba(0,0,0,0.30), 0 8px 32px 0 rgba(0,0,0,0.18)',
     border: `1.5px solid ${theme.mode === 'light' ? '#e0e0e0' : '#23242a'}`,
     borderRadius: 48, // match header/commandbar
     padding: '40px 40px 32px 40px',

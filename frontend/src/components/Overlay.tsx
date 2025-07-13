@@ -31,7 +31,9 @@ const Overlay: React.FC<OverlayProps> = (p) => {
     background: theme.surface,
     borderRadius: 28,
     padding: "14px 28px",
-    boxShadow: theme.shadow,
+    boxShadow: theme.mode === 'light' 
+      ? 'inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.1)'
+      : 'inset 0 2px 3px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.40), 0 6px 12px rgba(0,0,0,0.30)',
     zIndex: 999,
     animation: p.flash ? "flashOk .6s ease" : "bubbleFade .25s ease forwards",
   };
@@ -228,7 +230,9 @@ export const GameInfoOverlay: React.FC<GameInfoOverlayProps> = ({
     padding: "14px 28px",
     borderRadius: 28,
     background: theme.surface,
-    boxShadow: theme.shadow,
+    boxShadow: theme.mode === 'light' 
+      ? 'inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.1)'
+      : 'inset 0 2px 3px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.40), 0 6px 12px rgba(0,0,0,0.30)',
     color: "#fff",
     display: "flex",
     flexDirection: "column",

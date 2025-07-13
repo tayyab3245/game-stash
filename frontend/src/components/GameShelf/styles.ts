@@ -15,10 +15,10 @@ export const shellStyle = (t: Theme): React.CSSProperties => ({
   //  ───────── lift off the page ─────────
   boxShadow:
     t.mode === 'light'
-      // inset highlight + drop-shadow for light mode
-      ? 'inset 0 4px 6px rgba(255,255,255,0.6), 0 8px 16px rgba(0,0,0,0.1)'
-      // keep existing dark-mode shadow
-      : t.shadow,
+      // reduced inset highlight + drop-shadow for light mode
+      ? 'inset 0 2px 3px rgba(255,255,255,0.3), 0 4px 8px rgba(0,0,0,0.05)'
+      // reduced dark-mode shadow
+      : 'inset 0 1px 2px rgba(255,255,255,0.04), inset 0 -1px 1px rgba(0,0,0,0.20), 0 3px 6px rgba(0,0,0,0.15)',
 
   // beef up the bottom rim “lip”
   borderBottom: `6px solid ${t.panelEdge}`,

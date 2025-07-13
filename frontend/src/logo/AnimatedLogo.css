@@ -1,0 +1,88 @@
+:root {
+  --cart-w: 80px;
+  --cart-h: 240px;
+  --duration: 1.4s;
+  --delay-step: 0.15s;
+}
+
+.logo-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.animated-logo {
+  perspective: 800px;
+  display: flex;
+  gap: 24px;
+}
+
+.cart {
+  width: var(--cart-w);
+  height: var(--cart-h);
+  border-radius: 16px;
+  transform-style: preserve-3d;
+  position: relative;
+  animation: fan var(--duration) forwards;
+  cursor: pointer;
+}
+
+/* Inner shading – gives fake depth */
+.cart::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(0,0,0,.18);
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+
+.cart:hover::before { 
+  opacity: 1; 
+}
+
+/* Red, Blue, Yellow colours */
+.red    { background:#ff3b30; --final-rot: 22deg; }
+.blue   { background:#208eff; --final-rot: 0deg;  }
+.yellow { background:#ffcc00; --final-rot:-22deg; }
+
+/* Delay cascades so they move together but finish staggered */
+.red    { animation-delay: calc(var(--delay-step)*0); }
+.blue   { animation-delay: calc(var(--delay-step)*1); }
+.yellow { animation-delay: calc(var(--delay-step)*2); }
+
+@keyframes fan {
+  0%   { transform: rotateY(0deg); }
+  65%  { transform: rotateY(calc(var(--final-rot)*1.08)); }
+  100% { transform: rotateY(var(--final-rot)); }
+}
+
+/* Wordmark */
+.logo-title {
+  font: 800 64px/1 "Segoe UI", Inter, sans-serif;
+  color: #fff;
+  margin-top: 32px;
+  text-align: center;
+}
+
+/* Size variations */
+.logo-small {
+  --cart-w: 40px;
+  --cart-h: 120px;
+}
+
+.logo-small .logo-title {
+  font-size: 32px;
+  margin-top: 16px;
+}
+
+.logo-large {
+  --cart-w: 120px;
+  --cart-h: 360px;
+}
+
+.logo-large .logo-title {
+  font-size: 96px;
+  margin-top: 48px;
+}

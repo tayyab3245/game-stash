@@ -217,10 +217,16 @@ useLayoutEffect(()=>{
   background:
     linear-gradient(-35deg, rgba(255,255,255,0.07) 0%, transparent 60%),
     linear-gradient(180deg,${top} 0%, ${bot} 100%);
-  box-shadow:
-    inset 0 2px 3px rgba(255,255,255,0.08),
-    inset 0 -1px 2px rgba(0,0,0,0.4),
-    0 4px 8px rgba(0,0,0,0.3);
+  ${theme.mode === 'light' ? `
+  box-shadow: 
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    inset 0 -1px 0 rgba(0,0,0,0.2),
+    inset 1px 0 0 rgba(255,255,255,0.4),
+    inset -1px 0 0 rgba(0,0,0,0.1),
+    0 2px 4px rgba(0,0,0,0.15);
+  ` : `
+  box-shadow: inset 0 2px 3px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.40), 0 6px 12px rgba(0,0,0,0.30);
+  `}
   padding-left: 8px;
   padding-right: 8px;
 }
@@ -259,20 +265,21 @@ useLayoutEffect(()=>{
 }
 
 .view-toggle .seg.active {
-  background: linear-gradient(
-    to bottom,
-    #f0f0f0 0%,
-    #e8e8e8 10%,
-    #dcdcdc 50%,
-    #c2c2c2 90%,
-    #b2b2b2 100%
-  );
-  box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.6),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.15),
-    0 1px 2px rgba(0, 0, 0, 0.4);
-  color: #111;
+  background: 
+    linear-gradient(-35deg, rgba(255,255,255,0.07) 0%, transparent 60%),
+    linear-gradient(180deg, ${theme.mode === 'light' ? theme.panelBot : theme.panelTop} 0%, ${theme.mode === 'light' ? theme.panelTop : theme.panelBot} 100%);
+  background-blend-mode: soft-light;
+  ${theme.mode === 'light' ? `
+  box-shadow: 
+    inset 0 1px 0 rgba(0,0,0,0.2),
+    inset 0 -1px 0 rgba(255,255,255,0.7),
+    inset 1px 0 0 rgba(0,0,0,0.1),
+    inset -1px 0 0 rgba(255,255,255,0.3),
+    0 1px 2px rgba(0,0,0,0.2);
+  ` : `
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.10), inset 0 -1px 2px rgba(0,0,0,0.50), 0 2px 4px rgba(0,0,0,0.35);
+  `}
+  color: ${theme.text};
   z-index: 2;
   flex-grow: 2;
   height: 100%;
@@ -445,35 +452,12 @@ useLayoutEffect(()=>{
           >
             <ThemeToggleControl inline />
           </button>
-          <button 
-            className="seg"
-            title={volLevel === 0 ? 'Un-mute' : `Volume ${volLevel}/3`}
-            style={{ 
-              color: theme.text,
-              background: 'transparent',
-            }}
-            onPointerUp={() => {
-              handleVolChange((volLevel + 1) % 4 as VolumeLevel);
-              SoundManager.playUISelect();
-            }}
-          >
-            <svg
-              width="22" height="22" viewBox="0 0 24 24" aria-hidden
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-            >
-              {/* — rounded speaker body (filled) — */}
-              <path
-                d="M4 9a1 1 0 0 1 1-1h3.5l4-3a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1l-4-3H5a1 1 0 0 1-1-1V9z"
-                fill="currentColor" stroke="currentColor" strokeLinejoin="round"
-              />
-              {/* — sound waves — */}
-              {volLevel > 0 && <path d="M15 9.2a3 3 0 0 1 0 5.6" fill="none" />}
-              {volLevel > 1 && <path d="M17.5 7a5.5 5.5 0 0 1 0 10" fill="none" />}
-              {volLevel > 2 && <path d="M20 5a8 8 0 0 1 0 14" fill="none" />}
-              {/* — mute slash — */}
-              {volLevel === 0 && <line x1="15" y1="6" x2="22" y2="18" />}
-            </svg>
-          </button>
+          <div style={{ color: theme.text }}>
+            <VolumeButton 
+              level={volLevel} 
+              onChange={handleVolChange}
+            />
+          </div>
         </div>
         {/* Main content */}
         <div>

@@ -76,7 +76,9 @@ const CommandBar: React.FC<CommandBarProps> = ({
     ${tokensInst.gloss},
     linear-gradient(180deg,${tokensInst.top} 0%,${tokensInst.bot} 100%);
   background-blend-mode:soft-light;
-  box-shadow:${tokensInst.depth};
+  box-shadow: ${theme.mode === 'light' 
+    ? 'inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.1)' 
+    : 'inset 0 2px 3px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.40), 0 6px 12px rgba(0,0,0,0.30)'};
   z-index:3000; pointer-events:auto;
   }
 

@@ -110,26 +110,7 @@ export default function useShelfControls(opts: ShelfControlParams) {
     }
   };
 
-  // Find the game closest to center (x=0) for fixed-selector mode
-  const findGameAtCenter = () => {
-    let nearest: (THREE.Mesh & { userData: any }) | null = null;
-    let minDistanceSq = Infinity;
-    const targetX = 0; // Fixed center position
-    const targetY = 0;
-    opts.meshes.current.forEach((m) => {
-      if ((m as any).userData.isAdd) return;
-      // Calculate world position of the mesh (mesh position + shelf position)
-      const worldX = m.position.x + opts.shelf.current.position.x;
-      const dx = worldX - targetX;
-      const dy = m.position.y - targetY;
-      const dSq = dx * dx + dy * dy;
-      if (dSq < minDistanceSq) {
-        minDistanceSq = dSq;
-        nearest = m as THREE.Mesh & { userData: any };
-      }
-    });
-    return nearest;
-  };
+  // Auto-centering functionality removed to fix button navigation
 
   const registerKeyboard = () => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -166,13 +147,7 @@ export default function useShelfControls(opts: ShelfControlParams) {
 
     const clearSelect = () => opts.selectMesh(null);
 
-    // Fixed-selector mode: find which game is centered when pointer interaction starts
-    const autoSelectCentered = () => {
-      const nearest = findGameAtCenter();
-      if (nearest && nearest !== opts.selectedRef.current) {
-        opts.selectMesh(nearest, false);
-      }
-    };
+    // Auto-centering functionality removed to fix button navigation
 
     const cancelLong = () => {
       if (longTid !== null) {
@@ -260,26 +235,15 @@ export default function useShelfControls(opts: ShelfControlParams) {
           opts.backgroundRef.current.setPosition(clampedX * opts.pxPerWorld.current);
         }
 
-        // Find which game is now closest to the center (x=0) and select it
-        const centerMesh = findGameAtCenter();
-        if (centerMesh && centerMesh !== opts.selectedRef.current) {
-          SoundManager.playPan();
-          opts.selectMesh(centerMesh, false);
-        }
+        // Auto-selection during panning removed to fix navigation
       }
     };
 
     const onPointerUp = () => {
       dragging = false;
       cancelLong();
-
-      if (mode === 'pan') {
-        // Fixed-selector mode: find which game is now centered and select it
-        const nearestMesh = findGameAtCenter();
-        if (nearestMesh && !(nearestMesh as any).userData.isAdd) {
-          opts.selectMesh(nearestMesh, true);
-        }
-      }
+      
+      // Auto-selection after panning removed to fix navigation
     };
 
     document.body.style.overflow = 'hidden';

@@ -25,6 +25,40 @@ const GameFormModal: React.FC<GameFormModalProps> = ({
     emuPath: initial.emuPath ?? "",
   });
 
+  // Modern unified modal styles
+  const unifiedStyles = {
+    // Light theme unified constants
+    light: {
+      surface: 'linear-gradient(180deg, #f8f9fa 0%, #e9ecef 95%)',
+      rimLight: 'rgba(255, 255, 255, 0.6)',
+      edgeShadow: 'rgba(0, 0, 0, 0.15)',
+      depthShadow: 'rgba(0, 0, 0, 0.1)',
+      elevatedShadow: `
+        inset 0 2px 4px rgba(255, 255, 255, 0.6),
+        inset 0 -2px 3px rgba(0, 0, 0, 0.15),
+        0 8px 16px rgba(0, 0, 0, 0.1)
+      `,
+      textPrimary: '#000000',
+      border: 'rgba(0, 0, 0, 0.1)',
+    },
+    // Dark theme unified constants
+    dark: {
+      surface: 'linear-gradient(180deg, #495057 0%, #343a40 95%)',
+      rimLight: 'rgba(255, 255, 255, 0.08)',
+      edgeShadow: 'rgba(0, 0, 0, 0.40)',
+      depthShadow: 'rgba(0, 0, 0, 0.30)',
+      elevatedShadow: `
+        inset 0 2px 4px rgba(255, 255, 255, 0.08),
+        inset 0 -2px 3px rgba(0, 0, 0, 0.40),
+        0 8px 16px rgba(0, 0, 0, 0.30)
+      `,
+      textPrimary: '#f8f9fa',
+      border: 'rgba(255, 255, 255, 0.05)',
+    }
+  };
+
+  const currentTheme = unifiedStyles[themeMode];
+
   // Add modal animation
   useEffect(() => {
     const style = document.createElement("style");
@@ -62,8 +96,10 @@ const GameFormModal: React.FC<GameFormModalProps> = ({
   const overlay: React.CSSProperties = {
     position: "fixed",
     inset: 0,
-    backdropFilter: "blur(6px)",
-    background: themeMode === 'light' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,.4)',
+    backdropFilter: "blur(12px)",
+    background: themeMode === 'light' 
+      ? 'rgba(255,255,255,0.4)' 
+      : 'rgba(0,0,0,0.6)',
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -71,59 +107,76 @@ const GameFormModal: React.FC<GameFormModalProps> = ({
   };
 
   const modernPanel: React.CSSProperties = {
-    animation: "modalIn .25s ease",
+    animation: "modalIn .3s ease-out",
     display: "flex",
     flexDirection: "column",
-    gap: 28,
-    color: theme.text,
-    background: `linear-gradient(180deg, ${theme.panelTop} 0%, ${theme.panelBot} 100%)`,
-    boxShadow: themeMode === 'light' 
-      ? 'inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.1), 0 8px 32px 0 rgba(0,0,0,0.18)'
-      : 'inset 0 2px 3px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.40), 0 6px 12px rgba(0,0,0,0.30), 0 8px 32px 0 rgba(0,0,0,0.18)',
-    border: `1.5px solid ${theme.panelEdge}`,
-    borderRadius: 48,
-    padding: '40px 40px 32px 40px',
-    minWidth: 340,
-    maxWidth: 440,
-    width: '100%',
+    gap: 32,
+    color: currentTheme.textPrimary,
+    background: currentTheme.surface,
+    boxShadow: currentTheme.elevatedShadow,
+    border: `1px solid ${currentTheme.border}`,
+    borderRadius: '48px',
+    padding: '80px 96px 64px 96px',
+    minWidth: 800,  // More reasonable size, not too wide
+    maxWidth: 1000,
+    width: 'auto',  // Don't force full width
+    maxHeight: '90vh',
+    overflow: 'hidden',
     position: 'fixed',
     left: '50%',
     top: '50%',
     transform: 'translate(-50%, -50%)',
     zIndex: 1000,
     margin: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
+    fontFamily: '"Nunito", sans-serif',
   };
 
   const closeBtn: React.CSSProperties = {
     position: 'absolute',
-    top: 18,
-    right: 18,
-    width: 36,
-    height: 36,
+    top: 24,
+    right: 24,
+    width: 60,  // Larger to match button scale
+    height: 60,  // Larger to match button scale
     border: 'none',
-    background: 'transparent',
-    color: theme.text,
-    fontSize: 28,
-    fontWeight: 900,
+    background: currentTheme.surface,  // Match other buttons
+    color: currentTheme.textPrimary,
+    fontSize: 28,  // Slightly larger
+    fontWeight: 600,  // Match other buttons
     cursor: 'pointer',
     zIndex: 10,
-    borderRadius: 24,
-    transition: 'background 0.2s',
+    borderRadius: '48px',  // Match modal radius instead of circle
+    transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: currentTheme.elevatedShadow,  // Match button shadows
+    fontFamily: '"Nunito", sans-serif',  // Match other buttons
+    userSelect: 'none',
   };
 
   const headerStyle: React.CSSProperties = {
     margin: 0,
-    fontSize: 24,
-    fontWeight: 700,
+    fontSize: 28,  // Much smaller, more proportional
+    fontWeight: 700,  // Bold like header titles
     textAlign: 'center',
-    alignSelf: 'center',
-    marginBottom: 18,
-    color: theme.text,
+    marginBottom: 16,
+    color: currentTheme.textPrimary,
+    fontFamily: '"Nunito", sans-serif',
+  };
+
+  // Glassmorphism container style like the X button
+  const glassContainer: React.CSSProperties = {
+    background: 'rgba(0,0,0,0.1)',
+    borderRadius: '20px',
+    padding: '20px',
+    backdropFilter: 'blur(4px)',
+    border: `1px solid rgba(255,255,255,0.1)`,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 12,
   };
 
   return (
@@ -140,39 +193,142 @@ const GameFormModal: React.FC<GameFormModalProps> = ({
           ×
         </button>
         
-        <h2 style={headerStyle}>
-          {mode === "add" ? "Add Game" : "Edit Game"}
-        </h2>
+        {/* ADD GAME Header */}
+        <div style={{
+          background: currentTheme.surface,  // Same as modal background
+          padding: '24px',
+          borderRadius: '48px',  // Match modal's larger radius
+          boxShadow: 'none',  // Flat like modal, no elevation
+          border: `1px solid ${currentTheme.border}`,  // Same subtle border as modal
+          textAlign: 'center',
+          marginBottom: '32px',
+          width: '100%',
+          maxWidth: '600px',  // Match other elements
+          alignSelf: 'center',  // Center the header
+        }}>
+          <h2 style={headerStyle}>
+            {mode === "add" ? "ADD GAME" : "EDIT GAME"}
+          </h2>
+        </div>
 
-        <CoverArtSelector
-          coverFile={form.coverFile}
-          coverUrl={initial.coverUrl}
-          onCoverChange={(file) => setForm(prev => ({ ...prev, coverFile: file }))}
-        />
+        {/* Streamlined vertical layout */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'center', width: '100%' }}>
+          
+          {/* Large Cover Upload Area */}
+          <div 
+            style={{
+              width: '100%',
+              maxWidth: '500px',  // Wider container
+              height: '240px',  // Much shorter to mimic preview shape
+              background: currentTheme.surface,
+              borderRadius: '48px',  // Match modal radius
+              boxShadow: 'none',  // Flat like modal
+              border: `1px solid ${currentTheme.border}`,  // Same subtle border as modal
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              position: 'relative',
+              overflow: 'hidden',
+              padding: '24px',  // Adjust padding for shorter container
+              boxSizing: 'border-box',
+            }}
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.style.display = 'none';
+              input.onchange = (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0] ?? null;
+                setForm(prev => ({ ...prev, coverFile: file }));
+              };
+              document.body.appendChild(input);
+              input.click();
+              document.body.removeChild(input);
+            }}
+          >
+            {(form.coverFile || initial.coverUrl) ? (
+              <img
+                src={form.coverFile ? URL.createObjectURL(form.coverFile) : initial.coverUrl}
+                alt="Cover preview"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  width: 'auto',
+                  height: 'auto',
+                  objectFit: 'contain',
+                  borderRadius: '24px',  // Rounded but less than container
+                }}
+              />
+            ) : (
+              <>
+                <div style={{
+                  fontSize: '48px',
+                  color: currentTheme.textPrimary,
+                  opacity: 0.6,
+                  marginBottom: '12px',
+                }}>
+                  ↑
+                </div>
+                <div style={{
+                  fontSize: '18px',
+                  color: currentTheme.textPrimary,
+                  opacity: 0.7,
+                  fontWeight: 600,
+                  fontFamily: '"Nunito", sans-serif',
+                }}>
+                  Click to upload cover
+                </div>
+              </>
+            )}
+          </div>
+          
+          {/* Title Input */}
+          <div style={{ width: '100%', maxWidth: '600px' }}>
+            <GameTitleInput
+              value={form.title}
+              onChange={(title) => setForm(prev => ({ ...prev, title }))}
+              hideHeader={true}
+            />
+          </div>
 
-        <GameTitleInput
-          value={form.title}
-          onChange={(title) => setForm(prev => ({ ...prev, title }))}
-        />
+          {/* ROM/EMULATOR Segmented Buttons */}
+          <div style={{
+            display: 'flex',
+            background: currentTheme.surface,
+            borderRadius: '48px',  // Match modal roundness
+            border: `1px solid ${currentTheme.border}`,
+            overflow: 'hidden',
+            boxShadow: currentTheme.elevatedShadow,
+            gap: '1px',
+            width: '100%',
+            maxWidth: '600px',  // Match other elements
+          }}>
+            <RomPathSelector
+              romPath={form.romPath}
+              onRomPathChange={(romPath) => setForm(prev => ({ ...prev, romPath }))}
+              isSegmented={true}
+            />
+            <EmulatorPathSelector
+              emuPath={form.emuPath}
+              onEmuPathChange={(emuPath) => setForm(prev => ({ ...prev, emuPath }))}
+              isSegmented={true}
+            />
+          </div>
 
-        <RomPathSelector
-          romPath={form.romPath}
-          onRomPathChange={(romPath) => setForm(prev => ({ ...prev, romPath }))}
-        />
-
-        <EmulatorPathSelector
-          emuPath={form.emuPath}
-          onEmuPathChange={(emuPath) => setForm(prev => ({ ...prev, emuPath }))}
-        />
-
-        <FormActions
-          mode={mode}
-          form={form}
-          isValid={isValid}
-          onSubmit={handleSubmit}
-          onDismiss={onDismiss}
-          onDelete={onDelete}
-        />
+          {/* Action Buttons */}
+          <div style={{ width: '100%', maxWidth: '600px', marginTop: '16px' }}>
+            <FormActions
+              mode={mode}
+              form={form}
+              isValid={isValid}
+              onSubmit={handleSubmit}
+              onDismiss={onDismiss}
+              onDelete={onDelete}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

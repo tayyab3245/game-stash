@@ -212,7 +212,7 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
           height="100%"
           rows={rowMode}
           onSelect={(idx) => {
-            if (idx === -1 || (idx !== null && idx >= games.length)) {
+            if (idx === -1) {
               // Add button clicked
               setModalMode("add");
               setModalOpen(true);

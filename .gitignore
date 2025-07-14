@@ -43,3 +43,4 @@ roms/*
 /backend/covers
 backend/games.db
 /backend
+.vscode/tasks.json

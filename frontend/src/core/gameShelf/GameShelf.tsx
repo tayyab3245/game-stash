@@ -112,7 +112,8 @@ const GameShelf: React.FC<GameShelfProps> = ({
     // Convert mesh index to game index for parent component
     const meshIndex = meshes.current.indexOf(mesh);
     // Only call onSelect for regular games, not add button
-    if (!mesh.userData.isAdd && meshIndex < textures.length - 1) {
+    if (!mesh.userData.isAdd) {
+      // The mesh index corresponds directly to the game index since games come first in the array
       onSelect?.(meshIndex); // This is the game index
     }
     
@@ -444,9 +445,17 @@ const GameShelf: React.FC<GameShelfProps> = ({
       
       // Critical: Use legacy sorting logic
       if (rows === 2) {
-        // For 2 rows, sort into columns first (column-major: 1,3,5 on top, 2,4,6 on bottom)
-        c = Math.floor(i / rows);
-        r = i % rows;
+        // For 2 rows, custom pattern: first item goes bottom-left, then alternates top/bottom in subsequent columns
+        if (i === 0) {
+          // First item: bottom-left (column 0, row 1)
+          c = 0;
+          r = 1;
+        } else {
+          // For remaining items: alternate top/bottom in columns starting from column 1
+          const adjustedIndex = i - 1; // Adjust for the first item being special
+          c = Math.floor(adjustedIndex / 2) + 1; // Start from column 1, increment every 2 items
+          r = adjustedIndex % 2; // Alternate between top (0) and bottom (1)
+        }
       } else {
         // For 1 row, use standard row-major sorting
         r = Math.floor(i / cols);

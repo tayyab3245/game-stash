@@ -21,23 +21,69 @@ const FormActions: React.FC<FormActionsProps> = ({
   onDismiss,
   onDelete
 }) => {
-  const { theme } = useTheme();
+  const { theme, mode: themeMode } = useTheme();
+
+  // Unified styling constants
+  const unifiedStyles = {
+    light: {
+      surface: 'linear-gradient(180deg, #f8f9fa 0%, #e9ecef 95%)',
+      textPrimary: '#000000',
+      border: 'rgba(0, 0, 0, 0.12)',
+      shadow: `
+        inset 0 2px 3px rgba(255, 255, 255, 0.6),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.15),
+        0 6px 12px rgba(0, 0, 0, 0.1)
+      `,
+      hoverShadow: `
+        inset 0 2px 3px rgba(255, 255, 255, 0.8),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.15),
+        0 8px 16px rgba(0, 0, 0, 0.15)
+      `,
+      activeShadow: `
+        inset 0 1px 2px rgba(0, 0, 0, 0.2),
+        inset 0 -1px 2px rgba(255, 255, 255, 0.6),
+        0 2px 4px rgba(0, 0, 0, 0.15)
+      `,
+    },
+    dark: {
+      surface: 'linear-gradient(180deg, #495057 0%, #343a40 95%)',
+      textPrimary: '#f8f9fa',
+      border: 'rgba(255, 255, 255, 0.12)',
+      shadow: `
+        inset 0 2px 3px rgba(255, 255, 255, 0.08),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.40),
+        0 6px 12px rgba(0, 0, 0, 0.30)
+      `,
+      hoverShadow: `
+        inset 0 2px 3px rgba(255, 255, 255, 0.12),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.40),
+        0 8px 16px rgba(0, 0, 0, 0.40)
+      `,
+      activeShadow: `
+        inset 0 1px 2px rgba(0, 0, 0, 0.5),
+        inset 0 -1px 2px rgba(255, 255, 255, 0.08),
+        0 2px 4px rgba(0, 0, 0, 0.30)
+      `,
+    }
+  };
+
+  const currentTheme = unifiedStyles[themeMode];
 
   const modalBtn: React.CSSProperties = {
-    fontFamily: 'inherit',
-    fontWeight: 700,
-    fontSize: 16,
-    minWidth: 110,
-    padding: '12px 24px',
-    borderRadius: 18,
-    background: `linear-gradient(180deg, ${theme.panelTop} 0%, ${theme.panelBot} 100%)`,
-    color: theme.text,
-    border: `2.5px solid ${theme.panelEdge}`,
-    boxShadow: '0 2px 0 0 #bdbdbd, 0 4px 12px 0 rgba(0,0,0,0.10)',
+    fontFamily: '"Nunito", sans-serif',
+    fontWeight: 600,
+    fontSize: 24,  // Larger font to match scale
+    minWidth: 160,  // Wider buttons
+    padding: '20px 40px',  // More padding
+    borderRadius: '48px',  // Match modal radius
+    background: currentTheme.surface,
+    color: currentTheme.textPrimary,
+    border: 'none',  // Remove extra border - use theme shadow
+    boxShadow: currentTheme.shadow,
     outline: 'none',
     cursor: 'pointer',
     margin: 0,
-    transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
+    transition: 'all 0.2s ease',
     position: 'relative',
     userSelect: 'none',
   };
@@ -46,15 +92,16 @@ const FormActions: React.FC<FormActionsProps> = ({
     ...modalBtn,
     opacity: 0.5,
     cursor: 'not-allowed',
-    boxShadow: 'none',
+    boxShadow: currentTheme.activeShadow,
   };
 
   const actionRow: React.CSSProperties = {
     display: 'flex',
-    gap: 18,
-    justifyContent: 'center',
-    marginTop: 24,
+    gap: 24,  // More spacing between buttons to match scale
+    justifyContent: 'center',  // Center the buttons
+    marginTop: 20,
     width: '100%',
+    flexWrap: 'wrap',
   };
 
   return (

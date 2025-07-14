@@ -94,9 +94,9 @@ export const lightStyles = {
   header: {
     container: {
       position: 'relative' as const,
-      minHeight: 120,
-      padding: `${LIGHT_UNIFIED.spacingLarge} 32px 32px 32px`,
-      maxWidth: '800px',
+      minHeight: 120,  // Increased from 120 to 150 for more vertical space
+      padding: `${LIGHT_UNIFIED.spacingLarge} 48px 40px 48px`,  // Increased horizontal padding
+      maxWidth: '900px',  // Increased from 800px to 900px for more horizontal space
       margin: '0 auto',
       background: LIGHT_UNIFIED.surface,
       backdropFilter: 'blur(10px)',

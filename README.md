@@ -22,6 +22,7 @@ The app features fully 3D game covers that you can rotate and interact with. Eac
 <div align="center">
 
 ![3D Game Demo](frontend/src/assets/screenshots/3d-game-demo.gif)
+---
 *Interactive 3D game covers with realistic rotation and depth*
 
 </div>

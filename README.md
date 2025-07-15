@@ -1,7 +1,8 @@
 # Game Library
 
 A desktop app for organizing and launching Nintendo 3DS games.  
-Built with **React**, **Three.js**, and **Electron**, it features a 3D interactive shelf, auto-detection of ROMs and emulators, and integrated sound effects for a polished feel.
+Built with **React**, **Three.js**, and **Electron**, it features a 3D interactive shelf, auto-detection of ROMs and emulators, and integrated sound effects for a ### 📖 **Read the Full Journey:**
+**[Complete Development Timeline →](DEVELOPMENT-JOURNEY.md)**lished feel.
 
 ![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)
 
@@ -134,8 +135,131 @@ Looking for more box art?
 You can find high-quality game covers here:  
 >[The Cover Project – Nintendo 3DS (P)](https://www.thecoverproject.net/view.php?cat_id=54&view=p)
 
+---
 
+##  Development Journey
 
+*A quick overview of the major milestones that shaped this project*
 
+<div align="center">
 
+### **1. First 3D Breakthrough** → **2. Full-Stack Integration** → **3. Nintendo 3DS Vision** → **4. Advanced Polish** → **5. Production Ready**
 
+</div>
+
+---
+
+###  **Milestone 1: Learning 3D Fundamentals**
+*From flat textures to real 3D meshes*
+
+<div align="center">
+
+| Early 3D Experiments | First Real 3D Achievement |
+|---------------------|---------------------------|
+| ![First 3D Attempt](frontend/src/assets/screenshots/my-progress/first-3d-cover-attempt1.png) | ![Five Game Covers](frontend/src/assets/screenshots/my-progress/initial-version-with-3d-mesh-render.png) |
+| *Learning Three.js fundamentals* | *First stable 5-game prototype* |
+
+</div>
+
+**Key Achievement:** Mastered Three.js camera systems, texture mapping, and scene graph hierarchy. Progressed from pseudo-3D effects to authentic 3D rendering with proper mesh geometry.
+
+---
+
+###  **Milestone 2: Full-Stack Architecture**
+*Building complete backend integration*
+
+<div align="center">
+
+| Backend Development | Academic Submission |
+|-------------------|-------------------|
+| ![Backend Working](frontend/src/assets/screenshots/my-progress/early-prototype-for-edit-delete-logic.png) | ![Second Version](frontend/src/assets/screenshots/my-progress/my-second-working-version.png) |
+| *First working backend with CRUD* | *Complete full-stack system for school* |
+
+</div>
+
+**Key Achievement:** Implemented Express.js server, SQLite database, RESTful APIs, and real-time UI updates. Achieved stable CRUD functionality with comprehensive error handling.
+
+---
+
+###  **Milestone 3: Nintendo 3DS Transformation**
+*Authentic game case rendering with advanced texturing*
+
+<div align="center">
+
+| 3DS Inspiration | Complex UV Mapping | Perfect Result |
+|----------------|-------------------|----------------|
+| ![3DS Approach](frontend/src/assets/screenshots/my-progress/changed-approach-to-3ds.png) | ![UV Debug](frontend/src/assets/screenshots/my-progress/3ds-spline-debug1.png) | ![Perfect Mapping](frontend/src/assets/screenshots/my-progress/first-good-mapped-3ds-mesh.png) |
+| *Nintendo 3DS design pivot* | *Complex texture segmentation* | *Production-quality 3D assets* |
+
+</div>
+
+**Key Achievement:** Developed complex texture atlas segmentation for authentic 3DS game cases. Mastered UV coordinate calculations, texture bleeding prevention, and professional-grade 3D asset pipeline.
+
+---
+
+###  **Milestone 4: Advanced UI & Animation Systems**
+*Nintendo-inspired design with sophisticated interactions*
+
+<div align="center">
+
+| Grid Layout Systems | Animated Components | Theme Architecture |
+|-------------------|-------------------|-------------------|
+| ![Grid Layouts](frontend/src/assets/screenshots/my-progress/3-grid-layouts.png) | ![SVG Animations](frontend/src/assets/screenshots/my-progress/grid-icon-version2.png) | ![Light Theme](frontend/src/assets/screenshots/my-progress/first-light-theme.png) |
+| *Multi-configuration layouts* | *Physics-based animations* | *Dual-theme system* |
+
+</div>
+
+**Key Achievement:** Engineered sophisticated SVG animation systems replicating Nintendo's design patterns. Implemented physics-based bounce calculations, spring animations, and comprehensive theme architecture.
+
+---
+
+###  **Milestone 5: Production-Ready Architecture**
+*Complete modular system with professional polish*
+
+<div align="center">
+
+| **Early Stable Themes** | **Final Production Themes** |
+|-------------------------|----------------------------|
+| ![Early Light](frontend/src/assets/screenshots/my-progress/stable-light-version.png) | ![Final Light](frontend/src/assets/screenshots/my-progress/final-light.png) |
+| *Early light theme with basic theming* | *Final light theme with unified design tokens* |
+| ![Early Dark](frontend/src/assets/screenshots/my-progress/stable-dark-verson.png) | ![Final Dark](frontend/src/assets/screenshots/my-progress/final-dark.png) |
+| *Early dark theme with component-level styling* | *Final dark theme with centralized management* |
+
+</div>
+
+**Key Achievement:** Complete architectural refactoring with modular components, centralized theme management, and unified design tokens. Transformed from component-level hardcoded styling to professional-grade visual consistency and maintainable, scalable code architecture.
+
+---
+
+##  Detailed Development Timeline
+
+<details>
+<summary><strong> Click to explore the complete development timeline</strong></summary>
+
+> **Want to see how this project evolved from concept to production?**  
+> This comprehensive timeline showcases every major milestone, technical challenge, and breakthrough moment in the development process.
+
+###  **What You'll Discover:**
+- **18 Major Development Phases** - From first 3D experiments to production-ready architecture
+- **Technical Deep Dives** - Understanding Three.js, React, full-stack integration, and advanced graphics programming
+- **Problem-Solving Journey** - Real challenges, setbacks, and breakthrough moments
+- **Before & After Comparisons** - Visual progression showing each major improvement
+- **Architecture Evolution** - How the codebase transformed from prototype to maintainable system
+
+###  **Read the Full Journey:**
+**[Complete Development Timeline →](frontend/src/assets/screenshots/my-progress/progress-log.md)**
+
+*This document contains detailed technical explanations, screenshots from every development phase, and insights into the learning process behind building a complex 3D application.*
+
+---
+
+**Key Highlights from the Journey:**
+-  **Learning 3D Graphics** - Mastering Three.js, WebGL, and advanced rendering techniques
+-  **Full-Stack Architecture** - Building Express.js backend with SQLite and real-time updates  
+-  **UI/UX Evolution** - Developing Nintendo-inspired design system with dual themes
+-  **Performance Optimization** - Implementing object pooling, memory management, and GPU optimization
+-  **Complex Problem Solving** - Tackling UV mapping, texture segmentation, and spatial algorithms
+
+</details>
+
+---

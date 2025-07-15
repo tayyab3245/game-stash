@@ -461,7 +461,7 @@ I was so excited to engineer a sophisticated SVG animation system that replicate
 
 | Navigation Polish | Audio Controls | System Integration |
 |------------------|----------------|-------------------|
-| ![Arrow Enhancement](side-arrow-wip-after.png) | ![Audio Light](wip-sound-button-light.png) | ![Final Stable](stable-version2.png) |
+| ![Arrow Enhancement](side-arrow-wip-after.png) | ![Audio Light](wip-sound-button-light.png) |
 | | ![Audio Dark](wip-sound-button-dark.png) | |
 
 </div>

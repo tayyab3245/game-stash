@@ -16,6 +16,7 @@ import {
   DEPTH_FACTOR,
   PANEL_RATIO,
   LAYOUT,
+  SELECTOR,
 } from './constants';
 import { useTheme } from '../../features/theme/ThemeContext';
 import { clamp, same } from './helpers';
@@ -68,11 +69,10 @@ const GameShelf: React.FC<GameShelfProps> = ({
   const hasPlayedBackground = useRef<boolean>(false);
 
   // Animation and layout constants from legacy
-  const HOVER_BASE = 0.04;
-  const BREATHE_DISTANCE = 0.04;
-  const PAN_DAMPING = 0.005;
-  const GRID_ANIM_DURATION = 0.5;
-  const GRID_ANIM_HEIGHT = 0.4;
+  const BREATHE_DISTANCE = SELECTOR.BREATHE_DISTANCE;
+  const PAN_DAMPING = SELECTOR.PAN_DAMPING;
+  const GRID_ANIM_DURATION = SELECTOR.GRID_ANIM_DURATION;
+  const GRID_ANIM_HEIGHT = SELECTOR.GRID_ANIM_HEIGHT;
 
   // Track row changes for animation
   const prevRows = useRef<1 | 2>(rows);
@@ -97,7 +97,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
     }
     
     // Mark new selection
-    const selectedScale = LAYOUT[rows].scale * 1.05; // subtle pop
+    const selectedScale = LAYOUT[rows].scale * SELECTOR.SELECTED_SCALE_MULTIPLIER[rows];
     mesh.scale.set(selectedScale, selectedScale, selectedScale);
     const outline = mesh.userData.outline as THREE.Object3D;
     if (outline) outline.visible = true;
@@ -227,7 +227,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
         if (m.userData.gridAnimation?.isTransitioning) return; // Skip if transitioning
         const ph = m.userData.ph as number;
         m.position.y = (m.userData.homeY || 0) +
-          Math.sin(t * 1.2 + ph) * (HOVER_BASE * LAYOUT[rows].scale);
+          Math.sin(t * 1.2 + ph) * (SELECTOR.HOVER_BASE * LAYOUT[rows].scale);
       });
 
       // 3. Selector Breathing Animation
@@ -346,7 +346,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
         
         // Add outline for non-add meshes
         if (!isAdd) {
-          attachOutline(mesh, boxW, boxH, boxD);
+          attachOutline(mesh, boxW, boxH, boxD, rows);
         }
       }
       
@@ -439,6 +439,25 @@ const GameShelf: React.FC<GameShelfProps> = ({
     // Check for row switch to trigger animation
     const rowSwitch = prevRows.current !== rows;
     prevRows.current = rows;
+    
+    // Recreate all selectors when layout changes to apply new SELECTOR_FRAME_SCALE
+    if (rowSwitch) {
+      all.forEach((mesh) => {
+        if (!mesh.userData.isAdd && mesh.userData.outline) {
+          // Remove old selector
+          const oldOutline = mesh.userData.outline as THREE.Group;
+          shelf.current.remove(oldOutline);
+          oldOutline.clear();
+          mesh.userData.outline = null;
+          
+          // Create new selector with current layout scaling
+          const boxW = mesh.userData.actualWidth as number;
+          const boxH = mesh.userData.actualHeight as number;
+          const boxD = mesh.userData.actualDepth as number;
+          attachOutline(mesh, boxW, boxH, boxD, rows);
+        }
+      });
+    }
     
     const layoutTargets = all.map((m, i) => {
       let r: number, c: number;
@@ -544,12 +563,13 @@ const GameShelf: React.FC<GameShelfProps> = ({
     boxW: number,
     boxH: number,
     boxD: number,
+    layoutRows: 1 | 2,
     colour = 0xffc14d,
   ) => {
     if (mesh.userData.outline) return;
 
     const group = new THREE.Group();
-    const SELECTOR_SCALE = 0.22;   // Overall size of the brackets
+    const SELECTOR_SCALE = 0.22;   // Overall size of the brackets (thickness stays same)
     const SELECTOR_PADDING = 0.05; // Gap between the game cover and the brackets
     const len = Math.min(boxW, boxH) * SELECTOR_SCALE;
     const thick = len * 0.30;
@@ -584,7 +604,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
     // Calculate padded position to frame the cover
     const halfW = boxW / 2;
     const halfH = boxH / 2;
-    const padding = SELECTOR_PADDING + thick;
+    const padding = (SELECTOR_PADDING + thick) * SELECTOR.SELECTOR_FRAME_SCALE[layoutRows];
 
     const addCorner = (x: number, y: number, rotation: number) => {
       const corner = new THREE.Mesh(cornerGeo, mat);

@@ -44,3 +44,5 @@ roms/*
 backend/games.db
 /backend
 .vscode/tasks.json
+frontend/build/static/media/pan-sound-alt.669928e0b753f240336f.mp3
+/frontend/build

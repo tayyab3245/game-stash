@@ -51,16 +51,7 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
-      onMouseEnter={(e) => {
-        if (!disabled && !isActive) {
-          Object.assign(e.currentTarget.style, styles.buttonHover);
-        }
-      }}
-      onMouseOut={(e) => {
-        if (!isActive) {
-          Object.assign(e.currentTarget.style, buttonStyle);
-        }
-      }}
+      // Removed hover logic: no style changes on hover
     >
       <ArrowIcon 
         direction={direction}

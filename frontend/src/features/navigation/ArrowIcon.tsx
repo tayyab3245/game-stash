@@ -9,7 +9,7 @@ interface ArrowIconProps {
 
 const ArrowIcon: React.FC<ArrowIconProps> = ({ 
   direction, 
-  size = 24, 
+  size = 40, // Increased default size
   color = 'currentColor' 
 }) => {
   const isLeft = direction === 'left';
@@ -28,13 +28,10 @@ const ArrowIcon: React.FC<ArrowIconProps> = ({
           : "M8.5 5L15 12L8.5 19"
         }
         stroke={color}
-        strokeWidth="3"
+        strokeWidth="8"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
-        style={{
-          transition: 'all 0.2s ease',
-        }}
       />
     </svg>
   );

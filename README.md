@@ -8,6 +8,36 @@ Built with **React**, **Three.js**, and **Electron**, it features a 3D interacti
 This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.  
 You may share the work with attribution, but **modification or commercial use is not permitted**.
 
+<div align="center">
+
+![Light Theme Single Row](frontend/src/assets/screenshots/light-theme-single-row.png)
+*Clean, modern interface with single-row game display*
+
+</div>
+
+## 🎮 3D Game Cover Showcase
+
+The app features fully 3D game covers that you can rotate and interact with. Each cover is rendered as a complete 3D mesh with proper depth and lighting.
+
+<div align="center">
+
+![3D Game Demo](frontend/src/assets/screenshots/3d-game-demo.mp4)
+*Interactive 3D game covers with realistic rotation and depth*
+
+</div>
+
+## 📸 Theme Gallery
+
+<div align="center">
+
+| Light Theme | Dark Theme |
+|-------------|------------|
+| ![Light Theme Double Row](frontend/src/assets/screenshots/light-theme-double-row.png) | ![Dark Theme Single Row](frontend/src/assets/screenshots/dark-theme-single-row.png) |
+| *Light theme with double-row layout* | *Dark theme with single-row layout* |
+| ![Light Theme Single Row](frontend/src/assets/screenshots/light-theme-single-row.png) | ![Dark Theme Double Row](frontend/src/assets/screenshots/dark-theme-double-row.png) |
+| *Light theme with single-row layout* | *Dark theme with double-row layout* |
+
+</div>
 
 >  Emulators and ROMs are not included. The app only supports local files.
 

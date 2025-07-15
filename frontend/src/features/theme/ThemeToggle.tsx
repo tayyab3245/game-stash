@@ -30,13 +30,13 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   /* ─── SVG constants ─── */
   const uid = useId();
-  const VIEWBOX = 30;
+  const VIEWBOX = 160;  // Increased from 120 to 160 for much larger icon
   const CENTER = VIEWBOX / 2;
-  const CORE_RADIUS = 8;
+  const CORE_RADIUS = 16;  // Scaled up from 12 to 16
   const RAY_COUNT = 8;
-  const RAY_LEN = 5;
-  const RAY_WID = 3;
-  const RAY_GAP = 2;
+  const RAY_LEN = 12;   // Scaled up from 8 to 12
+  const RAY_WID = 5;    // Scaled up from 4 to 5
+  const RAY_GAP = 4;    // Scaled up from 3 to 4
   const MASK_RADIUS = CORE_RADIUS + 1;
 
   /* the actual art, reused in both render modes */
@@ -116,19 +116,21 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   /* button version with centralized styling */
   return (
-    <button
-      onClick={handleClick}
-      aria-label="Toggle theme"
-      style={styles.button}
-      onMouseEnter={(e) => {
-        Object.assign(e.currentTarget.style, styles.buttonHover);
-      }}
-      onMouseLeave={(e) => {
-        Object.assign(e.currentTarget.style, styles.button);
-      }}
-    >
-      {SunMoonSVG}
-    </button>
+    <div style={styles.container}>
+      <button
+        onClick={handleClick}
+        aria-label="Toggle theme"
+        style={styles.button}
+        onMouseEnter={(e) => {
+          Object.assign(e.currentTarget.style, styles.buttonHover);
+        }}
+        onMouseLeave={(e) => {
+          Object.assign(e.currentTarget.style, styles.button);
+        }}
+      >
+        {SunMoonSVG}
+      </button>
+    </div>
   );
 };
 

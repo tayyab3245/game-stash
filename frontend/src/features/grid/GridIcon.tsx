@@ -6,7 +6,7 @@ interface GridIconProps {
   size?: number;
 }
 
-const GridIcon: React.FC<GridIconProps> = ({ mode, filled = false, size = 48 }) => {
+const GridIcon: React.FC<GridIconProps> = ({ mode, filled = false, size = 96 }) => {
   /* inherit from parent (CommandBar) which now gets var(--text) */
   const strokeColor = 'currentColor';
   const fillColor   = filled ? 'currentColor' : 'transparent';

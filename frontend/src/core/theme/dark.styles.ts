@@ -138,12 +138,12 @@ export const darkStyles = {
     container: {
       position: 'absolute' as const,
       top: 16,   // Consistent top position
-      right: 82, // Aligned properly with volume button
+      right: 130, // More spacing: 96px button + 18px gap + 16px from right = 130px
       zIndex: 100,
     },
     button: {
-      width: 48,  
-      height: 48, 
+      width: 96,  // 2x larger (48 * 2)
+      height: 96, // 2x larger (48 * 2)
       padding: 0,
       background: DARK_UNIFIED.surface,
       border: 'none',  
@@ -151,7 +151,7 @@ export const darkStyles = {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: '12px',  // Square with rounded corners
+      borderRadius: '24px',  // 2x larger radius (12 * 2)
       transition: 'all 0.3s ease',
       backdropFilter: 'blur(10px)',
       boxShadow: DARK_UNIFIED.standardShadow,
@@ -172,12 +172,12 @@ export const darkStyles = {
       zIndex: 100,
     },
     button: {
-      width: 48,  
-      height: 48, 
+      width: 96,  // 2x larger (48 * 2)
+      height: 96, // 2x larger (48 * 2)
       padding: 0,
       background: DARK_UNIFIED.surface,
       border: 'none',  
-      borderRadius: '12px',  // Square with rounded corners to match theme toggle
+      borderRadius: '24px',  // 2x larger radius (12 * 2)
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
@@ -201,15 +201,15 @@ export const darkStyles = {
       left: 16,   // Consistent left margin to match right buttons
       top: 16,    // Consistent top to match right buttons
       display: 'flex',
-      gap: '6px',
+      gap: '12px', // 2x larger gap (6 * 2)
       zIndex: 100,
     },
     button: {
-      width: 48,  // Increased from 32
-      height: 48, // Increased from 32
+      width: 96,  // 2x larger (48 * 2)
+      height: 96, // 2x larger (48 * 2)
       background: DARK_UNIFIED.surface,
       border: 'none',  // Clean like arrow buttons
-      borderRadius: DARK_UNIFIED.borderRadius,  // Larger radius for bigger buttons
+      borderRadius: '24px',  // 2x larger radius (12 * 2)
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
@@ -346,6 +346,43 @@ export const darkStyles = {
       boxShadow: DARK_UNIFIED.standardShadow,  // Clean shadow like arrow buttons
       borderBottom: 'none',    // Remove the "lip" effect
       transition: 'transform 0.25s ease-out',
+    },
+  },
+
+  // === BUTTON GROUP BACKGROUNDS ===
+  leftButtonBackground: {
+    container: {
+      position: 'absolute' as const,
+      left: 0,      // Start from edge
+      top: 0,       // Start from edge  
+      width: 290,   // Much larger: 2 buttons (96px each) + gap (12px) + generous padding (40px each side) = 284px
+      height: 144,  // Much larger: 1 button (96px) + generous padding (24px each side) = 144px
+      borderTopLeftRadius: 0,     // Square top-left (touches edge)
+      borderTopRightRadius: 0,    // Square top-right 
+      borderBottomLeftRadius: 0,  // Square bottom-left (touches edge)
+      borderBottomRightRadius: '40px',  // Only round the inner bottom corner
+      background: DARK_UNIFIED.surface,
+      pointerEvents: 'none' as const,
+      zIndex: 5,     // Behind buttons but above background
+      boxShadow: DARK_UNIFIED.standardShadow,
+    },
+  },
+
+  rightButtonBackground: {
+    container: {
+      position: 'absolute' as const,
+      right: 0,     // Start from edge
+      top: 0,       // Start from edge
+      width: 290,   // Much larger: 2 buttons (96px each) + gap (18px) + generous padding (40px each side) = 290px
+      height: 144,  // Much larger: 1 button (96px) + generous padding (24px each side) = 144px
+      borderTopLeftRadius: 0,     // Square top-left
+      borderTopRightRadius: 0,    // Square top-right (touches edge)
+      borderBottomLeftRadius: '40px',   // Only round the inner bottom corner
+      borderBottomRightRadius: 0, // Square bottom-right (touches edge)
+      background: DARK_UNIFIED.surface,
+      pointerEvents: 'none' as const,
+      zIndex: 5,     // Behind buttons but above background
+      boxShadow: DARK_UNIFIED.standardShadow,
     },
   }
 };

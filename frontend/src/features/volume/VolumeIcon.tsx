@@ -25,8 +25,8 @@ const VolumeIcon: React.FC<VolumeIconProps> = ({
       strokeLinejoin="round"
       className={className}
       style={{
-        width: '40px',
-        height: '40px',
+        width: '80px',
+        height: '80px',
         position: 'relative',
         overflow: 'visible',
         ...style,

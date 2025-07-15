@@ -12,6 +12,9 @@ import CommandBar from "./features/commandBar/CommandBar";
 import Header from "./features/header/Header";
 import VolumeButton from "./features/volume/VolumeButton";
 import GridButton from "./features/grid/GridButton";
+// Import theme styles
+import { lightStyles } from "./core/theme/light.styles";
+import { darkStyles } from "./core/theme/dark.styles";
 
 type VolumeLevel = 0 | 1 | 2 | 3;
 
@@ -158,16 +161,11 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
       fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
       position: 'relative'
     }}>
+      {/* Left Button Group Background */}
+      <div style={theme.mode === 'light' ? lightStyles.leftButtonBackground.container : darkStyles.leftButtonBackground.container}></div>
+      
       {/* Upper left: view-toggle buttons */}
-      <div style={{ 
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        display: 'flex',
-        gap: '8px',
-        padding: '16px',
-        zIndex: 100
-      }}>
+      <div style={theme.mode === 'light' ? lightStyles.gridButtons.container : darkStyles.gridButtons.container}>
         {[1, 2].map((r) => (
           <GridButton
             key={r}
@@ -181,28 +179,17 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
       {/* Header */}
       <Header selectedGame={selectedGame} currentTime={now} />
       
-      {/* Theme Toggle - aligned side by side with volume */}
-      <div style={{
-        position: 'absolute',
-        top: 14,
-        right: 90,  // Moved left to align with volume button
-        zIndex: 100
-      }}>
-        <ThemeToggle onThemeChange={onThemeChange} />
-      </div>
+      {/* Right Button Group Background */}
+      <div style={theme.mode === 'light' ? lightStyles.rightButtonBackground.container : darkStyles.rightButtonBackground.container}></div>
+      
+      {/* Theme Toggle - using centralized styling */}
+      <ThemeToggle onThemeChange={onThemeChange} />
 
-      {/* Volume control - aligned side by side with theme toggle */}
-      <div style={{
-        position: 'absolute',
-        top: 14,    // Same top as theme toggle for proper alignment
-        right: 28,  // Right edge
-        zIndex: 100
-      }}>
-        <VolumeButton 
-          level={volumeLevel} 
-          onChange={setVolumeLevel} 
-        />
-      </div>
+      {/* Volume control - using centralized styling */}
+      <VolumeButton 
+        level={volumeLevel} 
+        onChange={setVolumeLevel} 
+      />
 
       {/* Game shelf */}
       <div style={{ height: SHELF_H }}>

@@ -48,8 +48,8 @@ const CommandBar: React.FC<CommandBarProps> = ({
     ...(launchHover && canLaunch ? styles.buttonHover : {}),
     ...(launchActive && canLaunch ? styles.buttonActive : {}),
     flex: 2,
-    borderTopRightRadius: '40px',
-    borderBottomRightRadius: '40px',
+    borderTopRightRadius: '60px',
+    borderBottomRightRadius: '60px',
     borderLeft: `1px solid rgba(255, 255, 255, 0.2)`,
   };
 
@@ -57,7 +57,7 @@ const CommandBar: React.FC<CommandBarProps> = ({
   const containerStyle = {
     ...styles.container,
     position: 'fixed' as const,
-    bottom: 0,
+    bottom: -15,
     left: 0,
     right: 0,
     height: '72px',

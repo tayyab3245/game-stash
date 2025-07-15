@@ -40,26 +40,28 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({
   };
 
   return (
-    <button
-      className={`volume-button ${className}`}
-      style={buttonStyle}
-      disabled={disabled}
-      onClick={handleClick}
-      title={title}
-      onMouseEnter={(e) => {
-        if (!disabled) {
-          Object.assign(e.currentTarget.style, styles.buttonHover);
-        }
-      }}
-      onMouseLeave={(e) => {
-        Object.assign(e.currentTarget.style, buttonStyle);
-      }}
-    >
-      <VolumeIcon 
-        level={level}
-        animationTrigger={animationKey}
-      />
-    </button>
+    <div style={styles.container}>
+      <button
+        className={`volume-button ${className}`}
+        style={buttonStyle}
+        disabled={disabled}
+        onClick={handleClick}
+        title={title}
+        onMouseEnter={(e) => {
+          if (!disabled) {
+            Object.assign(e.currentTarget.style, styles.buttonHover);
+          }
+        }}
+        onMouseLeave={(e) => {
+          Object.assign(e.currentTarget.style, buttonStyle);
+        }}
+      >
+        <VolumeIcon 
+          level={level}
+          animationTrigger={animationKey}
+        />
+      </button>
+    </div>
   );
 };
 

@@ -82,8 +82,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
   const selectMesh = (mesh: THREE.Mesh | null, playSound?: boolean) => {
     // Clear old selection
     if (selectedRef.current) {
-      const idleScale = LAYOUT[rows].scale;
-      selectedRef.current.scale.set(idleScale, idleScale, idleScale);
+      // Scale will be handled by layout system - no manual scale reset needed
       selectedRef.current.rotation.y = 0;
       const prevOutline = selectedRef.current.userData.outline as THREE.Object3D;
       if (prevOutline) prevOutline.visible = false;
@@ -96,9 +95,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
       return;
     }
     
-    // Mark new selection
-    const selectedScale = LAYOUT[rows].scale * SELECTOR.SELECTED_SCALE_MULTIPLIER[rows];
-    mesh.scale.set(selectedScale, selectedScale, selectedScale);
+    // Mark new selection (scale will be handled by layout system)
     const outline = mesh.userData.outline as THREE.Object3D;
     if (outline) outline.visible = true;
     

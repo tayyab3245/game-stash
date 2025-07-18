@@ -50,13 +50,14 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   /* ─── SVG constants ─── */
   const uid = useId();
-  const VIEWBOX = 160;  // Increased from 120 to 160 for much larger icon
+  const VIEWBOX = 200;  // Keep large viewbox
   const CENTER = VIEWBOX / 2;
-  const CORE_RADIUS = 16;  // Scaled up from 12 to 16
+  const CORE_RADIUS = 35;  // Much larger sun to match volume button size
+  const MOON_SIZE = 35;    // Same size as sun for consistency
   const RAY_COUNT = 8;
-  const RAY_LEN = 12;   // Scaled up from 8 to 12
-  const RAY_WID = 5;    // Scaled up from 4 to 5
-  const RAY_GAP = 4;    // Scaled up from 3 to 4
+  const RAY_LEN = 24;   // Scaled up proportionally
+  const RAY_WID = 8;    // Scaled up proportionally  
+  const RAY_GAP = 8;    // Scaled up proportionally
   const MASK_RADIUS = CORE_RADIUS + 1;
 
   /* the actual art, reused in both render modes */
@@ -67,38 +68,46 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
       viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
       style={{ display: "block", color: styles.iconColor }}
     >
-      <mask id={`rayMask-${uid}`}>
-        <rect width="100%" height="100%" fill="#fff" />
-        <circle cx={CENTER} cy={CENTER} r={MASK_RADIUS} fill="#000" />
-      </mask>
       {/* rays */}
       <g
-        mask={`url(#rayMask-${uid})`}
         style={{
           transformOrigin: `${CENTER}px ${CENTER}px`,
-          transform:
-            mode === "light"
-              ? "rotate(0deg) scale(1)"
-              : "rotate(45deg) scale(0.55)",
+          transform: mode === "light" ? "rotate(0deg)" : "rotate(45deg)",
           opacity: mode === "light" ? 1 : 0,
-          transition:
-            "opacity .8s ease-out, transform 1.2s cubic-bezier(.4,1.7,.6,1)",
+          transition: mode === "light"
+            ? "opacity 0.8s ease 0.7s, transform 0.6s ease 0.7s"
+            : "opacity 0.8s ease, transform 0.6s ease",
         }}
       >
-        {Array.from({ length: RAY_COUNT }).map((_, i) => (
-          <rect
-            key={i}
-            x={CENTER - RAY_WID / 2}
-            y={CENTER - CORE_RADIUS - RAY_GAP - RAY_LEN}
-            width={RAY_WID}
-            height={RAY_LEN}
-            rx={1}
-            fill="currentColor"
-            transform={`rotate(${(360 / RAY_COUNT) * i} ${CENTER} ${CENTER})`}
-          />
-        ))}
+        {Array.from({ length: RAY_COUNT }).map((_, i) => {
+          // Calculate ray position to check if it would overlap with moon
+          const angle = (360 / RAY_COUNT) * i;
+          const rayStartRadius = CORE_RADIUS + RAY_GAP;
+          const rayEndRadius = rayStartRadius + RAY_LEN;
+          
+          // Only show ray if it doesn't extend into moon area when moon is visible
+          const shouldShowRay = mode === "light" || rayStartRadius > CORE_RADIUS;
+          
+          return (
+            <rect
+              key={i}
+              x={CENTER - RAY_WID / 2}
+              y={CENTER - CORE_RADIUS - RAY_GAP - RAY_LEN}
+              width={RAY_WID}
+              height={shouldShowRay ? RAY_LEN : Math.max(0, CORE_RADIUS - rayStartRadius)}
+              rx={RAY_WID / 2}
+              fill="currentColor"
+              transform={`rotate(${angle} ${CENTER} ${CENTER})`}
+              style={{
+                opacity: shouldShowRay ? 1 : 0,
+                transition: "opacity 0.8s ease",
+              }}
+            />
+          );
+        })}
       </g>
-      {/* core disc ⇄ ring */}
+      
+      {/* sun core */}
       <circle
         cx={CENTER}
         cy={CENTER}
@@ -106,23 +115,43 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
         fill="currentColor"
         style={{
           opacity: mode === "light" ? 1 : 0,
-          transition: "opacity .8s linear",
-          filter:
-            mode === "light"
-              ? "drop-shadow(0 0 6px rgba(255,255,255,.5))"
-              : "none",
+          transition: mode === "light" 
+            ? "opacity 0.3s ease 0.5s" 
+            : "opacity 0.3s ease",
         }}
       />
+      
+      {/* moon */}
+      <defs>
+        <mask id={`crescentMask-${uid}`}>
+          <rect width="100%" height="100%" fill="#fff" />
+          {/* Animated mask ellipse that slides in like an eclipse */}
+          <ellipse 
+            cx={mode === "light" ? CENTER + 80 : CENTER + 15} 
+            cy={mode === "light" ? CENTER - 10 : CENTER - 5} 
+            rx={25}
+            ry={30}
+            fill="#000"
+            style={{
+              transition: mode === "light" 
+                ? "cx 0.5s ease, cy 0.5s ease" 
+                : "cx 0.8s ease 0.5s, cy 0.8s ease 0.5s",
+            }}
+          />
+        </mask>
+      </defs>
+      
       <circle
         cx={CENTER}
         cy={CENTER}
         r={CORE_RADIUS}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
+        fill="currentColor"
+        mask={`url(#crescentMask-${uid})`}
         style={{
           opacity: mode === "light" ? 0 : 1,
-          transition: "opacity .8s linear",
+          transition: mode === "light" 
+            ? "opacity 0.3s ease 0.6s" 
+            : "opacity 0.3s ease",
         }}
       />
     </svg>

@@ -17,9 +17,9 @@
 /* Physics-based Ring Cursor - No shadow on main element */
 .physics-ring-cursor {
   position: fixed;
-  width: 40px;  /* Matching the HTML version */
-  height: 40px; /* Matching the HTML version */
-  border-radius: 50%;
+  width: 40px;  /* Default size - overridden when eating buttons */
+  height: 40px; /* Default size - overridden when eating buttons */
+  border-radius: 50%; /* Default shape - overridden when eating buttons */
   pointer-events: none;
   z-index: 2147483647;
   
@@ -27,14 +27,34 @@
   border: none;
   background: transparent;
   
-  /* No additional transitions - physics handles all movement */
-  transition: none;
+  /* Smooth transitions for button eating effect */
+  transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              border-radius 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   
   /* Hardware acceleration for smoothness */
-  will-change: transform;
+  will-change: transform, width, height, border-radius;
   backface-visibility: hidden;
   perspective: 1000px;
   transform-style: preserve-3d;
+}
+
+/* Button eating state - enhanced shadow and glow */
+.physics-ring-cursor.eating-button::after {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2)) 
+          drop-shadow(0 0 20px rgba(255, 255, 255, 0.1));
+  /* Ensure shadow scales with the button size */
+  transform: rotate(calc(-1 * var(--cursor-angle, 0deg))) scale(1);
+}
+
+/* Button eating state - enhanced lighting */
+.physics-ring-cursor.eating-button::before {
+  box-shadow: 
+    inset 0 3px 6px rgba(255, 255, 255, 0.4),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+    0 0 0 2px rgba(255, 255, 255, 0.1);
+  /* Ensure lighting scales with the button size */
+  transform: rotate(calc(-1 * var(--cursor-angle, 0deg))) scale(1);
 }
 
 /* Static shadow pseudo-element that doesn't rotate */
@@ -45,7 +65,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  border-radius: 50%;
+  border-radius: inherit; /* Inherit border-radius from parent */
   z-index: -1; /* Behind the main content */
   
   /* Static shadow - counter-rotates to stay in place */
@@ -61,7 +81,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  border-radius: 50%;
+  border-radius: inherit; /* Inherit border-radius from parent */
   transition: background 0.3s ease, box-shadow 0.3s ease;
   
   /* The inverse rotation keeps the lighting static while cursor morphs */
@@ -83,6 +103,8 @@
   box-shadow: 
     inset 0 2px 3px rgba(255, 255, 255, 0.08),
     inset 0 -1px 2px rgba(0, 0, 0, 0.40);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
 }
 
 [data-theme="light"] .physics-ring-cursor::before {
@@ -90,6 +112,8 @@
   box-shadow: 
     inset 0 2px 3px rgba(255, 255, 255, 0.6),
     inset 0 -1px 2px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
 }
 
 /* Disable on touch devices */

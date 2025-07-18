@@ -22,16 +22,28 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
   const handleMouseDown = (e: React.MouseEvent) => {
     if (disabled) return;
     setIsActive(true);
+    // Add press effect
+    const button = e.currentTarget as HTMLButtonElement;
+    button.style.transform = 'translateY(2px)';
+    button.style.boxShadow = 'inset 0 2px 4px rgba(0, 0, 0, 0.3)';
     onMouseDown?.();
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
     setIsActive(false);
+    // Remove press effect
+    const button = e.currentTarget as HTMLButtonElement;
+    button.style.transform = 'translateY(0px)';
+    button.style.boxShadow = styles.button?.boxShadow || '';
     onMouseUp?.();
   };
 
   const handleMouseLeave = (e: React.MouseEvent) => {
     setIsActive(false);
+    // Remove press effect
+    const button = e.currentTarget as HTMLButtonElement;
+    button.style.transform = 'translateY(0px)';
+    button.style.boxShadow = styles.button?.boxShadow || '';
     onMouseLeave?.();
   };
 
@@ -41,6 +53,8 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
     ...(isActive ? styles.buttonActive : {}),
     width: size,
     height: size,
+    transition: 'all 0.15s ease',
+    transform: 'translateY(0px)',
   };
 
   return (
@@ -51,16 +65,6 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
-      onMouseEnter={(e) => {
-        if (!disabled && !isActive) {
-          Object.assign(e.currentTarget.style, styles.buttonHover);
-        }
-      }}
-      onMouseOut={(e) => {
-        if (!isActive) {
-          Object.assign(e.currentTarget.style, buttonStyle);
-        }
-      }}
     >
       <ArrowIcon 
         direction={direction}

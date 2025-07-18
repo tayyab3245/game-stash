@@ -83,9 +83,10 @@ const FormActions: React.FC<FormActionsProps> = ({
     outline: 'none',
     cursor: 'pointer',
     margin: 0,
-    transition: 'all 0.2s ease',
+    transition: 'all 0.15s ease',
     position: 'relative',
     userSelect: 'none',
+    transform: 'translateY(0px)',
   };
 
   const modalBtnDisabled: React.CSSProperties = {
@@ -104,11 +105,41 @@ const FormActions: React.FC<FormActionsProps> = ({
     flexWrap: 'wrap',
   };
 
+  // Button press effect handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(2px)';
+    button.style.boxShadow = currentTheme.activeShadow;
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(0px)';
+    button.style.boxShadow = currentTheme.shadow;
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(0px)';
+    button.style.boxShadow = currentTheme.shadow;
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const button = e.currentTarget;
+    if (!button.disabled) {
+      button.style.boxShadow = currentTheme.hoverShadow;
+    }
+  };
+
   return (
     <div style={actionRow}>
       {mode === "edit" && onDelete && (
         <button
           style={modalBtn}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          onMouseEnter={handleMouseEnter}
           onClick={() => {
             SoundManager.playUIBack();
             onDelete();
@@ -117,18 +148,28 @@ const FormActions: React.FC<FormActionsProps> = ({
           Delete
         </button>
       )}
-      <button
-        style={modalBtn}
-        onClick={() => {
-          SoundManager.playUIBack();
-          onDismiss();
-        }}
-      >
-        Cancel
-      </button>
+      {mode === "add" && (
+        <button
+          style={modalBtn}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          onMouseEnter={handleMouseEnter}
+          onClick={() => {
+            SoundManager.playUIBack();
+            onDismiss();
+          }}
+        >
+          Cancel
+        </button>
+      )}
       <button
         style={isValid ? modalBtn : modalBtnDisabled}
         disabled={!isValid}
+        onMouseDown={isValid ? handleMouseDown : undefined}
+        onMouseUp={isValid ? handleMouseUp : undefined}
+        onMouseLeave={isValid ? handleMouseLeave : undefined}
+        onMouseEnter={isValid ? handleMouseEnter : undefined}
         onClick={() => {
           if (isValid) {
             SoundManager.playUISelect();

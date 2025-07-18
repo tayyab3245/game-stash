@@ -190,7 +190,17 @@ const GameFormModal: React.FC<GameFormModalProps> = ({
             onDismiss();
           }}
         >
-          ×
+          <svg 
+            width="28" 
+            height="28" 
+            viewBox="0 0 28 28" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="5" 
+            strokeLinecap="round"
+          >
+            <path d="M7 7l14 14M21 7L7 21" />
+          </svg>
         </button>
         
         {/* ADD GAME Header */}

@@ -15,7 +15,7 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({
   disabled = false,
 }) => {
   const { theme, mode } = useTheme();
-  const styles = mode === 'light' ? lightStyles.volumeButton : darkStyles.volumeButton; // Use centralized styling
+  const styles = mode === 'light' ? lightStyles.volumeButton : darkStyles.volumeButton;
   const [animationKey, setAnimationKey] = useState(0);
 
   const handleClick = () => {
@@ -30,13 +30,38 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({
     }
   };
 
+  // Button press effect handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(2px)';
+    // Use a pressed shadow effect
+    button.style.boxShadow = 'inset 0 2px 4px rgba(0, 0, 0, 0.3)';
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(0px)';
+    button.style.boxShadow = styles.button?.boxShadow || '';
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(0px)';
+    button.style.boxShadow = styles.button?.boxShadow || '';
+  };
+
   const title = VolumeLogic.getTitle(level);
 
   // Apply centralized styling with behavior logic preserved
   const buttonStyle = {
     ...styles.button,
     ...style,
-    color: styles.iconColor, // This sets the currentColor for the SVG
+    color: styles.iconColor,
+    transition: 'all 0.15s ease',
+    transform: 'translateY(0px)',
   };
 
   return (
@@ -47,14 +72,9 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({
         disabled={disabled}
         onClick={handleClick}
         title={title}
-        onMouseEnter={(e) => {
-          if (!disabled) {
-            Object.assign(e.currentTarget.style, styles.buttonHover);
-          }
-        }}
-        onMouseLeave={(e) => {
-          Object.assign(e.currentTarget.style, buttonStyle);
-        }}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
       >
         <VolumeIcon 
           level={level}

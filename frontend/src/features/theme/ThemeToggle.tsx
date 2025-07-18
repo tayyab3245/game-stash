@@ -28,6 +28,26 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
     onThemeChange?.(next);
   };
 
+  // Button press effect handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(2px)';
+    // Use a pressed shadow effect
+    button.style.boxShadow = 'inset 0 2px 4px rgba(0, 0, 0, 0.3)';
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(0px)';
+    button.style.boxShadow = styles.button?.boxShadow || '';
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(0px)';
+    button.style.boxShadow = styles.button?.boxShadow || '';
+  };
+
   /* ─── SVG constants ─── */
   const uid = useId();
   const VIEWBOX = 160;  // Increased from 120 to 160 for much larger icon
@@ -120,13 +140,14 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
       <button
         onClick={handleClick}
         aria-label="Toggle theme"
-        style={styles.button}
-        onMouseEnter={(e) => {
-          Object.assign(e.currentTarget.style, styles.buttonHover);
+        style={{
+          ...styles.button,
+          transition: 'all 0.15s ease',
+          transform: 'translateY(0px)',
         }}
-        onMouseLeave={(e) => {
-          Object.assign(e.currentTarget.style, styles.button);
-        }}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
       >
         {SunMoonSVG}
       </button>

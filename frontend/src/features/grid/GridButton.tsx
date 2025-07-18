@@ -16,7 +16,7 @@ const GridButton: React.FC<GridButtonProps> = ({
   disabled = false,
 }) => {
   const { theme, mode: themeMode } = useTheme();
-  const styles = themeMode === 'light' ? lightStyles.gridButtons : darkStyles.gridButtons; // Use centralized styling
+  const styles = themeMode === 'light' ? lightStyles.gridButtons : darkStyles.gridButtons;
   const [isChanging, setIsChanging] = useState(false);
 
   const handleClick = () => {
@@ -30,6 +30,28 @@ const GridButton: React.FC<GridButtonProps> = ({
     setTimeout(() => setIsChanging(false), 200);
   };
 
+  // Button press effect handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(2px)';
+    button.style.boxShadow = styles.buttonActive?.boxShadow || '';
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(0px)';
+    button.style.boxShadow = styles.button?.boxShadow || '';
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+    const button = e.currentTarget;
+    button.style.transform = 'translateY(0px)';
+    button.style.boxShadow = styles.button?.boxShadow || '';
+  };
+
   const title = GridLogic.getTitle(mode);
   
   // Apply centralized styling with behavior logic preserved
@@ -37,7 +59,9 @@ const GridButton: React.FC<GridButtonProps> = ({
     ...styles.button,
     ...(filled ? styles.buttonActive : {}),
     ...style,
-    color: styles.iconColor, // This sets the currentColor for the SVG
+    color: styles.iconColor,
+    transition: 'all 0.15s ease',
+    transform: 'translateY(0px)',
   };
 
   const cssClasses = [
@@ -54,14 +78,9 @@ const GridButton: React.FC<GridButtonProps> = ({
       disabled={disabled}
       onClick={handleClick}
       title={title}
-      onMouseEnter={(e) => {
-        if (!disabled) {
-          Object.assign(e.currentTarget.style, styles.buttonHover);
-        }
-      }}
-      onMouseLeave={(e) => {
-        Object.assign(e.currentTarget.style, buttonStyle);
-      }}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
     >
       <GridIcon 
         mode={mode}

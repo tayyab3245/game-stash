@@ -20,37 +20,51 @@ const CommandBar: React.FC<CommandBarProps> = ({
 }) => {
   const { theme, mode } = useTheme();
   const styles = mode === 'light' ? lightStyles.commandBar : darkStyles.commandBar;
-  
-  const [editHover, setEditHover] = useState(false);
-  const [editActive, setEditActive] = useState(false);
-  const [launchHover, setLaunchHover] = useState(false);
-  const [launchActive, setLaunchActive] = useState(false);
 
   // Play click sound
   const blip = () => SoundManager.playPan();
+
+  // Button press effect handlers
+  const handleMouseDown = (buttonRef: HTMLButtonElement, isEnabled: boolean) => {
+    if (!isEnabled) return;
+    buttonRef.style.transform = 'translateY(2px)';
+    buttonRef.style.boxShadow = styles.buttonActive?.boxShadow || '';
+  };
+
+  const handleMouseUp = (buttonRef: HTMLButtonElement, isEnabled: boolean) => {
+    if (!isEnabled) return;
+    buttonRef.style.transform = 'translateY(0px)';
+    buttonRef.style.boxShadow = styles.button?.boxShadow || '';
+  };
+
+  const handleMouseLeave = (buttonRef: HTMLButtonElement, isEnabled: boolean) => {
+    if (!isEnabled) return;
+    buttonRef.style.transform = 'translateY(0px)';
+    buttonRef.style.boxShadow = styles.button?.boxShadow || '';
+  };
 
   // Edit button - left third
   const editButtonStyle = {
     ...styles.button,
     ...(editEnabled ? {} : styles.buttonDisabled),
-    ...(editHover && editEnabled ? styles.buttonHover : {}),
-    ...(editActive && editEnabled ? styles.buttonActive : {}),
     flex: 1,
     borderTopLeftRadius: '40px',
     borderBottomLeftRadius: '40px',
     borderRight: `1px solid rgba(0, 0, 0, 0.3)`,
+    transition: 'all 0.15s ease',
+    transform: 'translateY(0px)',
   };
 
   // Launch button - right two-thirds
   const launchButtonStyle = {
     ...styles.button,
     ...(canLaunch ? {} : styles.buttonDisabled),
-    ...(launchHover && canLaunch ? styles.buttonHover : {}),
-    ...(launchActive && canLaunch ? styles.buttonActive : {}),
     flex: 2,
     borderTopRightRadius: '60px',
     borderBottomRightRadius: '60px',
     borderLeft: `1px solid rgba(255, 255, 255, 0.2)`,
+    transition: 'all 0.15s ease',
+    transform: 'translateY(0px)',
   };
 
   // Container styling
@@ -88,10 +102,9 @@ const CommandBar: React.FC<CommandBarProps> = ({
         style={editButtonStyle}
         disabled={!editEnabled}
         onClick={handleEdit}
-        onMouseEnter={() => setEditHover(true)}
-        onMouseLeave={() => setEditHover(false)}
-        onMouseDown={() => setEditActive(true)}
-        onMouseUp={() => setEditActive(false)}
+        onMouseDown={(e) => handleMouseDown(e.currentTarget, editEnabled)}
+        onMouseUp={(e) => handleMouseUp(e.currentTarget, editEnabled)}
+        onMouseLeave={(e) => handleMouseLeave(e.currentTarget, editEnabled)}
       >
         EDIT
       </button>
@@ -101,10 +114,9 @@ const CommandBar: React.FC<CommandBarProps> = ({
         style={launchButtonStyle}
         disabled={!canLaunch}
         onClick={handleLaunch}
-        onMouseEnter={() => setLaunchHover(true)}
-        onMouseLeave={() => setLaunchHover(false)}
-        onMouseDown={() => setLaunchActive(true)}
-        onMouseUp={() => setLaunchActive(false)}
+        onMouseDown={(e) => handleMouseDown(e.currentTarget, canLaunch)}
+        onMouseUp={(e) => handleMouseUp(e.currentTarget, canLaunch)}
+        onMouseLeave={(e) => handleMouseLeave(e.currentTarget, canLaunch)}
       >
         LAUNCH
       </button>

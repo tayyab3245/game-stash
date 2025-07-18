@@ -459,8 +459,8 @@ const GameShelf: React.FC<GameShelfProps> = ({
         
         const barGeoH = new RoundedBoxGeometry(barL, barT, barD, 6, r);
         const barGeoV = new RoundedBoxGeometry(barT, barL, barD, 6, r);
-        // Use theme text color: black in light mode, white in dark mode
-        const plusColor = themeCtx.theme.text === '#141414' ? 0x000000 : 0xffffff;
+        // Use orange in light mode (same as selector frame), white in dark mode
+        const plusColor = themeCtx.theme.text === '#141414' ? 0xffc14d : 0xffffff;
         const barMat = new THREE.MeshBasicMaterial({ color: plusColor });
         
         const barH = new THREE.Mesh(barGeoH, barMat);

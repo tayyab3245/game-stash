@@ -114,17 +114,17 @@ const GameShelf: React.FC<GameShelfProps> = ({
     
     let shouldCenter = true; // Default to centering
     
-    // Don't center the first two games to prevent white space on the left
-    // User requirement: "centrering should take effefct after teh second game object"
-    if (gameIndex <= 1) {
-      shouldCenter = false;
-    }
-    
-    // For double row mode, apply similar logic based on columns
-    if (rows === 2) {
-      const currentCol = Math.floor(gameIndex / rows);
-      // Don't center if we're in the first column (which includes first 2 games)
-      if (currentCol === 0) {
+    // Apply centering logic based on row mode
+    if (rows === 1) {
+      // Don't center the first two games to prevent white space on the left
+      // User requirement: "centrering should take effefct after teh second game object"
+      if (gameIndex <= 1) {
+        shouldCenter = false;
+      }
+    } else if (rows === 2) {
+      // For double row mode, only allow centering starting from game 6 onwards
+      // This prevents any subtle pulling for games 0,1,2,3,4,5 that creates empty space
+      if (gameIndex <= 5) {
         shouldCenter = false;
       }
     }
@@ -138,7 +138,8 @@ const GameShelf: React.FC<GameShelfProps> = ({
       currentCol: rows === 2 ? Math.floor(gameIndex / rows) : 'N/A',
       meshPositionX: mesh.position.x,
       currentShelfX: shelf.current.position.x,
-      willSetTargetTo: shouldCenter ? (-mesh.position.x) : 'no change'
+      willSetTargetTo: shouldCenter ? (-mesh.position.x) : 'no change',
+      debugInfo: `Mode: ${rows}-row, Game: ${gameIndex}, Should center: ${shouldCenter}`
     });
     
     if (shouldCenter) {
@@ -252,6 +253,16 @@ const GameShelf: React.FC<GameShelfProps> = ({
             m.scale.copy(anim.endScale);
             m.userData.homeY = anim.endPos.y; // Update homeY for hover
             delete m.userData.gridAnimation;
+            
+            // RESTORE SELECTION STATE after grid transition completes
+            if (m === selectedRef.current) {
+              console.log('🎯 Grid transition complete - restoring selection for game', meshes.current.indexOf(m));
+              const outline = m.userData.outline as THREE.Object3D;
+              if (outline) {
+                outline.visible = true;
+                console.log('✅ Selected game outline restored and made visible after grid transition');
+              }
+            }
           }
         }
       });
@@ -269,6 +280,12 @@ const GameShelf: React.FC<GameShelfProps> = ({
             if (progress === 1) {
               outlineGroup.position.copy(anim.endPos);
               delete outlineGroup.userData.gridAnimation;
+              
+              // SHOW SELECTED OUTLINE after grid transition completes
+              if (m === selectedRef.current) {
+                outlineGroup.visible = true;
+                console.log('🔲 Selected game outline reappeared after grid transition complete');
+              }
             }
           }
         }
@@ -417,8 +434,17 @@ const GameShelf: React.FC<GameShelfProps> = ({
             mesh!.material = new THREE.MeshBasicMaterial({ color: 0x444444 });
           }
         );
-      } else if (isAdd && !mesh.userData.plusBuilt) {
-        // Create "+" symbol for add button
+      } else if (isAdd && (!mesh.userData.plusBuilt || mesh.userData.themeText !== themeCtx.theme.text)) {
+        // Create "+" symbol for add button (recreate if theme changed)
+        
+        // Clear existing plus if it exists
+        if (mesh.userData.plusBuilt) {
+          const existingPlus = mesh.children.find(child => child.userData.isPlus);
+          if (existingPlus) {
+            mesh.remove(existingPlus);
+          }
+        }
+        
         const invisible = new THREE.MeshBasicMaterial({
           transparent: true,
           opacity: 0,
@@ -433,7 +459,9 @@ const GameShelf: React.FC<GameShelfProps> = ({
         
         const barGeoH = new RoundedBoxGeometry(barL, barT, barD, 6, r);
         const barGeoV = new RoundedBoxGeometry(barT, barL, barD, 6, r);
-        const barMat = new THREE.MeshBasicMaterial({ color: 0xffbe32 });
+        // Use theme text color: black in light mode, white in dark mode
+        const plusColor = themeCtx.theme.text === '#141414' ? 0x000000 : 0xffffff;
+        const barMat = new THREE.MeshBasicMaterial({ color: plusColor });
         
         const barH = new THREE.Mesh(barGeoH, barMat);
         const barV = new THREE.Mesh(barGeoV, barMat);
@@ -445,6 +473,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
         barH.position.z = barV.position.z = boxD * 0.55;
         mesh.add(plusGrp);
         mesh.userData.plusBuilt = true;
+        mesh.userData.themeText = themeCtx.theme.text; // Track current theme
       }
       
       // Store dimensions
@@ -551,29 +580,88 @@ const GameShelf: React.FC<GameShelfProps> = ({
     });
     
     if (rowSwitch) {
-      // If the rows changed, trigger the choreographed animation
+      // MORPHING GRID TRANSITION: Animate existing games in-place to reorganize into new layout
+      // PRESERVE SELECTION AND VIEW CONTEXT during transition
+      const currentShelfX = shelf.current.position.x;
+      const selectedGame = selectedRef.current;
+      const selectedGameIndex = selectedGame ? all.indexOf(selectedGame) : -1;
+      
+      console.log('🔄 Starting grid morph transition from', prevRows.current, 'to', rows, 'rows');
+      console.log('📌 Selected game index during transition:', selectedGameIndex);
+      
+      // Calculate where the selected game should end up and adjust shelf to keep it in view
+      if (selectedGame && selectedGameIndex >= 0) {
+        const selectedGameCurrentScreenX = selectedGame.position.x + currentShelfX;
+        const selectedGameNewPos = layoutTargets[selectedGameIndex].position.x;
+        
+        // Calculate shelf adjustment to keep selected game roughly in the same screen position
+        const newShelfX = selectedGameCurrentScreenX - selectedGameNewPos;
+        const clampedShelfX = clamp(newShelfX, bounds.current.min, bounds.current.max);
+        
+        // Update shelf target to maintain view context
+        shelfTargetX.current = clampedShelfX;
+        
+        console.log('📍 Adjusting shelf to maintain selected game view:', {
+          selectedGameScreenX: selectedGameCurrentScreenX.toFixed(2),
+          selectedGameNewPos: selectedGameNewPos.toFixed(2),
+          newShelfTarget: clampedShelfX.toFixed(2)
+        });
+      }
+      
+      // Trigger the choreographed animation from current positions to new layout positions
       const t = clock.current.getElapsedTime();
       all.forEach((m, i) => {
+        // Start from exactly where the game currently is (no screen position calculations)
+        const currentPos = m.position.clone();
+        const currentScale = m.scale.clone();
+        
+        // End at the new layout position
+        const targetPos = layoutTargets[i].position;
+        const targetScale = layoutTargets[i].scale;
+        
         m.userData.gridAnimation = {
           isTransitioning: true,
           startTime: t,
-          startPos: m.position.clone(),
-          endPos: layoutTargets[i].position,
-          startScale: m.scale.clone(),
-          endScale: layoutTargets[i].scale,
+          startPos: currentPos,
+          endPos: targetPos,
+          startScale: currentScale,
+          endScale: targetScale,
           direction: (i % 2 === 0) ? 1 : -1, // Alternating up/down motion
         };
+        
+        console.log(`🎬 Game ${i} morphing:`, {
+          from: { x: currentPos.x.toFixed(2), y: currentPos.y.toFixed(2) },
+          to: { x: targetPos.x.toFixed(2), y: targetPos.y.toFixed(2) },
+          scaleFrom: currentScale.x.toFixed(3),
+          scaleTo: targetScale.x.toFixed(3),
+          isSelected: m === selectedGame
+        });
+        
+        // HIDE SELECTOR during transition - cleaner approach
         if (!m.userData.isAdd && m.userData.outline) {
           const outlineGroup = m.userData.outline as THREE.Group;
+          
+          // Hide ALL outlines during grid transition for cleaner animation
+          outlineGroup.visible = false;
+          console.log('🔲 Hiding outline during grid transition for game', i);
+          
+          // Still need to animate outline position but keep it hidden
           outlineGroup.userData.gridAnimation = {
             isTransitioning: true,
             startTime: t,
             startPos: outlineGroup.position.clone(),
-            endPos: new THREE.Vector3(layoutTargets[i].position.x, layoutTargets[i].position.y, (m.userData.actualDepth as number) / 2 + 0.01),
+            endPos: new THREE.Vector3(targetPos.x, targetPos.y, (m.userData.actualDepth as number) / 2 + 0.01),
             direction: (i % 2 === 0) ? 1 : -1,
           };
         }
       });
+      
+      // IMPORTANT: Re-establish selection after layout targets are calculated
+      // This ensures the selection system knows where the selected game will be
+      if (selectedGame && selectedGameIndex >= 0) {
+        console.log('🔄 Selection will be restored for game', selectedGameIndex, 'after grid transition completes');
+        // Don't show outline during transition - it will reappear when animation finishes
+      }
     } else {
       // Apply positions directly (no animation)
       all.forEach((m, i) => {
@@ -618,7 +706,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
       }
     }
 
-  }, [textures, rows, frontWidthUnits, frontHeightUnits]);
+  }, [textures, rows, frontWidthUnits, frontHeightUnits, themeCtx.theme.text]);
 
   // Selector bracket system from legacy GameShelf
   const attachOutline = (

@@ -67,6 +67,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
   const bounds = useRef({ min: -10, max: 10 });
   const currentCenterIdx = useRef<number | null>(null);
   const hasPlayedBackground = useRef<boolean>(false);
+  const padLeftRef = useRef<number>(0); // Store padLeft for use in selectMesh
 
   // Animation and layout constants from legacy
   const BREATHE_DISTANCE = SELECTOR.BREATHE_DISTANCE;
@@ -74,12 +75,19 @@ const GameShelf: React.FC<GameShelfProps> = ({
   const GRID_ANIM_DURATION = SELECTOR.GRID_ANIM_DURATION;
   const GRID_ANIM_HEIGHT = SELECTOR.GRID_ANIM_HEIGHT;
 
+  // ⚙️ MANUAL STARTING POSITION KNOB ⚙️
+  // Adjust this value to move the first game's starting position:
+  // 0 = first game at left edge
+  // positive values = move games to the right
+  // negative values = move games to the left
+  const STARTING_POSITION_OFFSET = -20; // 
+
   // Track row changes for animation
   const prevRows = useRef<1 | 2>(rows);
   const clock = useRef<THREE.Clock>(new THREE.Clock());
 
   // Fixed-selector selection system with smooth animation
-  const selectMesh = (mesh: THREE.Mesh | null, playSound?: boolean) => {
+  const selectMesh = (mesh: THREE.Mesh | null, playSound?: boolean, navigationDirection?: 'left' | 'right' | 'up' | 'down' | null) => {
     // Clear old selection
     if (selectedRef.current) {
       // Scale will be handled by layout system - no manual scale reset needed
@@ -99,19 +107,66 @@ const GameShelf: React.FC<GameShelfProps> = ({
     const outline = mesh.userData.outline as THREE.Object3D;
     if (outline) outline.visible = true;
     
-    // Set target for smooth animation to center the selected game
-    const targetX = -mesh.position.x;
-    shelfTargetX.current = clamp(targetX, bounds.current.min, 0); // Left-anchored bounds
+    // Enhanced auto-centering logic to prevent white space on the left
+    const currentMeshIndex = meshes.current.indexOf(mesh);
+    const playableGames = meshes.current.filter(m => !m.userData.isAdd);
+    const gameIndex = playableGames.indexOf(mesh);
+    
+    let shouldCenter = true; // Default to centering
+    
+    // Don't center the first two games to prevent white space on the left
+    // User requirement: "centrering should take effefct after teh second game object"
+    if (gameIndex <= 1) {
+      shouldCenter = false;
+    }
+    
+    // For double row mode, apply similar logic based on columns
+    if (rows === 2) {
+      const currentCol = Math.floor(gameIndex / rows);
+      // Don't center if we're in the first column (which includes first 2 games)
+      if (currentCol === 0) {
+        shouldCenter = false;
+      }
+    }
+    
+    console.log('GameShelf Debug:', {
+      gameIndex,
+      rows,
+      shouldCenter,
+      navigationDirection,
+      gameName: mesh.userData.game?.name || 'Unknown',
+      currentCol: rows === 2 ? Math.floor(gameIndex / rows) : 'N/A',
+      meshPositionX: mesh.position.x,
+      currentShelfX: shelf.current.position.x,
+      willSetTargetTo: shouldCenter ? (-mesh.position.x) : 'no change'
+    });
+    
+    if (shouldCenter) {
+      // Set target for smooth animation to center the selected game
+      const targetX = -mesh.position.x;
+      shelfTargetX.current = clamp(targetX, bounds.current.min, bounds.current.max); // Use proper bounds
+    } else {
+      // Don't center - keep the shelf at its current position
+      console.log('Not centering - keeping shelf position at:', shelf.current.position.x);
+      // For the first two games, maintain the manual starting position instead of resetting to 0
+      const manualStartPosition = -padLeftRef.current + STARTING_POSITION_OFFSET;
+      
+      // Only reset if we're scrolled past the manual starting position to the left
+      if (shelf.current.position.x < manualStartPosition) {
+        shelfTargetX.current = manualStartPosition; // Reset to manual starting position
+        console.log('Resetting shelf target to manual starting position:', manualStartPosition);
+      }
+      // Otherwise, keep the current target (don't change shelfTargetX.current)
+    }
     
     // Update center index and notify parent
-    currentCenterIdx.current = meshes.current.indexOf(mesh);
+    currentCenterIdx.current = currentMeshIndex;
     
     // Convert mesh index to game index for parent component
-    const meshIndex = meshes.current.indexOf(mesh);
     // Only call onSelect for regular games, not add button
     if (!mesh.userData.isAdd) {
       // The mesh index corresponds directly to the game index since games come first in the array
-      onSelect?.(meshIndex); // This is the game index
+      onSelect?.(currentMeshIndex); // This is the game index
     }
     
     if (playSound) SoundManager.playUISelect();
@@ -422,16 +477,19 @@ const GameShelf: React.FC<GameShelfProps> = ({
     const padLeft = itemW * cfg.padLeft;
     const padRight = itemW * cfg.padRight;
 
+    // Store padLeft for use in selectMesh function
+    padLeftRef.current = padLeft;
+
     const cols = Math.ceil(all.length / rows);
     layoutInfo.current.cols = cols;
     const rowW = cols * itemW + (cols - 1) * gapX + padLeft + padRight;
     
     // Calculate bounds for left-anchored scrolling: 
-    // - Max bound is 0 (first games at left edge)
+    // - Max bound is -padLeft (first game at left edge)
     // - Min bound allows scrolling left to see all games
     const totalWidth = (cols - 1) * (itemW + gapX);
     bounds.current.min = -totalWidth - padLeft; // Can scroll left to see all games
-    bounds.current.max = 0; // Cannot scroll right past the first game
+    bounds.current.max = -padLeft; // First game positioned at left edge
     
     // Check for row switch to trigger animation
     const rowSwitch = prevRows.current !== rows;
@@ -543,12 +601,20 @@ const GameShelf: React.FC<GameShelfProps> = ({
     if (!selectedRef.current && all.length > 0) {
       const firstPlayable = all.find(m => !m.userData.isAdd);
       if (firstPlayable) {
-        selectMesh(firstPlayable, false);
-        // Set initial shelf position (no animation on first load)
-        const targetShelfX = -firstPlayable.position.x;
-        const clampedX = clamp(targetShelfX, bounds.current.min, 0);
-        shelf.current.position.x = clampedX;
-        shelfTargetX.current = clampedX;
+        selectMesh(firstPlayable, false, null); // Initial selection, no direction
+        
+        // 🔧 MANUAL POSITIONING: Use the knob to adjust starting position
+        const targetShelfX = -padLeft + STARTING_POSITION_OFFSET;
+        shelf.current.position.x = targetShelfX;
+        shelfTargetX.current = targetShelfX;
+        
+        console.log('🔧 Manual positioning with knob:', {
+          firstGamePosInShelf: firstPlayable.position.x,
+          padLeft: padLeft,
+          offset: STARTING_POSITION_OFFSET,
+          finalShelfPos: targetShelfX,
+          resultingGameScreenPos: firstPlayable.position.x + targetShelfX
+        });
       }
     }
 

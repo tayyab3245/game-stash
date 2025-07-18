@@ -18,7 +18,7 @@ export interface ShelfControlParams {
   bounds: React.MutableRefObject<{ min: number; max: number }>;
   currentCenterIdx: React.MutableRefObject<number | null>;
   rows: 1 | 2;
-  selectMesh: (mesh: THREE.Mesh | null, playSound?: boolean) => void;
+  selectMesh: (mesh: THREE.Mesh | null, playSound?: boolean, navigationDirection?: 'left' | 'right' | 'up' | 'down' | null) => void;
   onSelect?: (idx: number | null) => void;
   onLongPress?: (idx: number) => void;
   hasPlayedBackground: React.MutableRefObject<boolean>;
@@ -89,7 +89,15 @@ export default function useShelfControls(opts: ShelfControlParams) {
     if (nextIdx !== current) {
       // Select the new game - this will trigger smooth animation via selectMesh
       const newGame = playable[nextIdx];
-      opts.selectMesh(newGame, true);
+      
+      // Determine navigation direction
+      let navigationDirection: 'left' | 'right' | 'up' | 'down' | null = null;
+      if (dir.x === 1) navigationDirection = 'right';
+      else if (dir.x === -1) navigationDirection = 'left';
+      else if (dir.y === 1) navigationDirection = 'down';
+      else if (dir.y === -1) navigationDirection = 'up';
+      
+      opts.selectMesh(newGame, true, navigationDirection);
       
       // Update current center index
       opts.currentCenterIdx.current = opts.meshes.current.indexOf(newGame);
@@ -145,7 +153,7 @@ export default function useShelfControls(opts: ShelfControlParams) {
     let longTid: number | null = null;
     let moved = false;
 
-    const clearSelect = () => opts.selectMesh(null);
+    const clearSelect = () => opts.selectMesh(null, false, null);
 
     // Auto-centering functionality removed to fix button navigation
 
@@ -200,7 +208,7 @@ export default function useShelfControls(opts: ShelfControlParams) {
       }
 
       if (hit) {
-        opts.selectMesh(hit, true);
+        opts.selectMesh(hit, true, null); // No direction for mouse clicks
         mode = 'rotate';
 
         longTid = window.setTimeout(() => {

@@ -15,6 +15,8 @@ import GridButton from "./features/grid/GridButton";
 // Import theme styles
 import { lightStyles } from "./core/theme/light.styles";
 import { darkStyles } from "./core/theme/dark.styles";
+// Import custom cursor
+import { CustomCursor } from "./features/cursor";
 
 type VolumeLevel = 0 | 1 | 2 | 3;
 
@@ -161,6 +163,9 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
       fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
       position: 'relative'
     }}>
+      {/* Custom Ring Cursor */}
+      <CustomCursor enabled={true} />
+      
       {/* Left Button Group Background */}
       <div style={theme.mode === 'light' ? lightStyles.leftButtonBackground.container : darkStyles.leftButtonBackground.container}></div>
       

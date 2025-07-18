@@ -1,0 +1,111 @@
+/* Global cursor override - disable all default cursors */
+* {
+  cursor: none !important;
+}
+
+/* Custom Cursor Container */
+.custom-cursor-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 2147483647;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Static shadow layer that doesn't rotate */
+.physics-ring-shadow {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2147483646; /* Behind the cursor */
+  
+  /* Only the shadow - stays static and doesn't rotate */
+  background: transparent;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  
+  transition: box-shadow 0.3s ease;
+  
+  /* Hardware acceleration */
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Physics-based Ring Cursor - Now a transparent frame for the pseudo-element */
+.physics-ring-cursor {
+  position: fixed;
+  width: 40px;  /* Matching the HTML version */
+  height: 40px; /* Matching the HTML version */
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2147483647;
+  
+  /* Main element is now transparent - the pseudo-element handles visuals */
+  border: none;
+  background: transparent;
+  
+  /* No additional transitions - physics handles all movement */
+  transition: none;
+  
+  /* Hardware acceleration for smoothness */
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+/* NEW: Pseudo-element for the non-rotating lighting */
+.physics-ring-cursor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  
+  /* The inverse rotation keeps the lighting static while cursor morphs */
+  transform: rotate(calc(-1 * var(--cursor-angle, 0deg)));
+}
+
+/* Theme-specific shadow effects */
+[data-theme="dark"] .physics-ring-shadow {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.30);
+}
+
+[data-theme="light"] .physics-ring-shadow {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Theme-based 3D effects applied to the NON-ROTATING pseudo-element */
+[data-theme="dark"] .physics-ring-cursor::before {
+  background: linear-gradient(180deg, rgba(73, 80, 87, 0.8) 0%, rgba(52, 58, 64, 0.6) 95%);
+  box-shadow: 
+    inset 0 2px 3px rgba(255, 255, 255, 0.08),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.40);
+}
+
+[data-theme="light"] .physics-ring-cursor::before {
+  background: linear-gradient(180deg, rgba(248, 249, 250, 0.8) 0%, rgba(233, 236, 239, 0.6) 95%);
+  box-shadow: 
+    inset 0 2px 3px rgba(255, 255, 255, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* Disable on touch devices */
+@media (pointer: coarse) {
+  .custom-cursor-container {
+    display: none;
+  }
+}
+
+/* Disable on touch devices */
+@media (pointer: coarse) {
+  .custom-cursor-container {
+    display: none;
+  }
+}

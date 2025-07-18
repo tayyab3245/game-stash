@@ -7,8 +7,7 @@ export interface CustomCursorProps {
 }
 
 const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [shadowPosition, setShadowPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: 0, y: 0, angle: 0, stretch: 1, scale: 1 });
   const [isClicking, setIsClicking] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const { theme } = useTheme();
@@ -59,19 +58,13 @@ const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
       const angle = Math.atan2(velocity.current.y, velocity.current.x) * (180 / Math.PI);
       const stretch = Math.min(1 + speed * 0.25, 2.0); // Increased from 0.1 and 1.2 for more dramatic stretch
 
-      // Update both positions in the same frame
+      // Update position state for React
       setPosition({
         x: ringPos.current.x,
         y: ringPos.current.y,
         angle: angle + 90,
         stretch: stretch * currentScale.current,
         scale: currentScale.current
-      } as any);
-
-      // Shadow follows mouse with slight smoothing to prevent jitter
-      setShadowPosition({
-        x: mousePos.current.x,
-        y: mousePos.current.y
       });
 
       animationFrameId.current = requestAnimationFrame(animate);
@@ -160,16 +153,7 @@ const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
 
   return (
     <div className="custom-cursor-container">
-      {/* Static shadow layer that follows mouse directly */}
-      <div
-        className="physics-ring-shadow"
-        style={{
-          left: `${shadowPosition.x}px`,
-          top: `${shadowPosition.y}px`,
-          transform: `translate(-50%, -50%) scale(${currentScale.current})`,
-        }}
-      />
-      {/* Physics-based Ring Cursor that morphs */}
+      {/* Physics-based Ring Cursor with built-in shadow via CSS */}
       <div
         className={`physics-ring-cursor ${isClicking ? 'clicking' : ''} ${isHovering ? 'hovering' : ''}`}
         style={{

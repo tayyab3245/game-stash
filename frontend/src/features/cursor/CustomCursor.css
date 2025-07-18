@@ -14,27 +14,7 @@
   height: 100vh;
 }
 
-/* Static shadow layer that doesn't rotate */
-.physics-ring-shadow {
-  position: fixed;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 2147483646; /* Behind the cursor */
-  
-  /* Only the shadow - stays static and doesn't rotate */
-  background: transparent;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  
-  transition: box-shadow 0.3s ease;
-  
-  /* Hardware acceleration */
-  will-change: transform;
-  backface-visibility: hidden;
-}
-
-/* Physics-based Ring Cursor - Now a transparent frame for the pseudo-element */
+/* Physics-based Ring Cursor - No shadow on main element */
 .physics-ring-cursor {
   position: fixed;
   width: 40px;  /* Matching the HTML version */
@@ -43,7 +23,7 @@
   pointer-events: none;
   z-index: 2147483647;
   
-  /* Main element is now transparent - the pseudo-element handles visuals */
+  /* Main element is now transparent - no shadow here */
   border: none;
   background: transparent;
   
@@ -57,7 +37,23 @@
   transform-style: preserve-3d;
 }
 
-/* NEW: Pseudo-element for the non-rotating lighting */
+/* Static shadow pseudo-element that doesn't rotate */
+.physics-ring-cursor::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  z-index: -1; /* Behind the main content */
+  
+  /* Static shadow - counter-rotates to stay in place */
+  transform: rotate(calc(-1 * var(--cursor-angle, 0deg)));
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.1));
+}
+
+/* Pseudo-element for the non-rotating lighting */
 .physics-ring-cursor::before {
   content: '';
   position: absolute;
@@ -72,13 +68,13 @@
   transform: rotate(calc(-1 * var(--cursor-angle, 0deg)));
 }
 
-/* Theme-specific shadow effects */
-[data-theme="dark"] .physics-ring-shadow {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.30);
+/* Theme-specific drop shadow effects on static shadow element */
+[data-theme="dark"] .physics-ring-cursor::after {
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.30));
 }
 
-[data-theme="light"] .physics-ring-shadow {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+[data-theme="light"] .physics-ring-cursor::after {
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.1));
 }
 
 /* Theme-based 3D effects applied to the NON-ROTATING pseudo-element */

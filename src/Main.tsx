@@ -1,5 +1,5 @@
 // Main component using organized architecture
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { ThemeProvider, useTheme } from "./features/theme";
 import GameShelf from "./core/gameShelf/GameShelf";
 import ThemeToggle from "./features/theme/ThemeToggle";
@@ -48,10 +48,58 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
   const [commandBarVisible, setCommandBarVisible] = useState(true);
   const [gameTransitioning, setGameTransitioning] = useState(false);
 
+  /* ── Environment detection ── */
+  const isElectron = !!(window as any).gameAPI && !!(window as any).settingsAPI;
+
+  /* ── Memoized textures array to ensure GameShelf re-renders ── */
+  const [gameTextures, setGameTextures] = useState<string[]>([]);
+  
+  useEffect(() => {
+    const updateTextures = async () => {
+      console.log('[Main] updateTextures called with', games.length, 'games, isElectron:', isElectron);
+      
+      if (isElectron) {
+        // In Electron, convert imageUrl to file paths
+        const texturePromises = games.map(async (g: Game) => {
+          if (!g.imageUrl) {
+            console.log('[Main] Game has no imageUrl:', g.title);
+            return null;
+          }
+          try {
+            console.log('[Main] Converting imageUrl for game:', g.title, 'imageUrl:', g.imageUrl);
+            const fileUrl = await (window as any).launcherAPI.getImageUrl(g.imageUrl);
+            console.log('[Main] Got file URL:', fileUrl);
+            return fileUrl;
+          } catch (err) {
+            console.warn('Failed to get image URL for game:', g.title, err);
+            return null;
+          }
+        });
+        
+        const resolvedTextures = await Promise.all(texturePromises);
+        const validTextures = resolvedTextures.filter((url): url is string => Boolean(url));
+        console.log('[Main] GameShelf will render with', validTextures.length, 'game textures + 1 add button');
+        console.log('[Main] Valid textures:', validTextures);
+        const finalTextures = [...validTextures, ADD_MARKER];
+        console.log('[Main] Final textures array:', finalTextures);
+        console.log('[Main] Final textures count:', finalTextures.length, 'items');
+        setGameTextures(finalTextures);
+      } else {
+        // In browser mode, use imageUrl directly (for legacy Express mode)
+        const textures = games.map((g: Game) => g.imageUrl).filter((url): url is string => Boolean(url));
+        console.log('[Main] GameShelf will render with', textures.length, 'game textures + 1 add button');
+        setGameTextures([...textures, ADD_MARKER]);
+      }
+    };
+
+    updateTextures();
+  }, [games, isElectron]);
+
   /* ── load games on mount ── */
   useEffect(() => {
+    console.log(`Running in ${isElectron ? 'Electron' : 'Browser'} mode`);
     loadGames();
-  }, [loadGames]);
+  }, [loadGames, isElectron]);
 
   /* ── Automatically select the first game when games are loaded ── */
   useEffect(() => {
@@ -252,7 +300,7 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
       {/* Game shelf */}
       <div style={{ height: SHELF_H }}>
         <GameShelf
-          textures={[...games.map((g: Game) => g.imageUrl).filter((url): url is string => Boolean(url)), ADD_MARKER]}
+          textures={gameTextures}
           width="100%"
           height="100%"
           rows={rowMode}

@@ -36,9 +36,25 @@ interface GameAPI {
   deleteAllGames: () => Promise<{ success: boolean; error?: string }>;
 }
 
+interface SettingsAPI {
+  getAll: () => Promise<any>;
+  setEmulatorPath: (path: string) => Promise<void>;
+  setRomsPath: (path: string) => Promise<void>;
+  setCoverArtPath: (path: string) => Promise<void>;
+  update: (settings: any) => Promise<void>;
+  reset: () => Promise<void>;
+}
+
+interface DialogAPI {
+  selectFolder: (options?: any) => Promise<string | null>;
+  selectFile: (options?: any) => Promise<string | null>;
+}
+
 declare global {
   interface Window {
     launcherAPI: LauncherAPI;
     gameAPI: GameAPI;
+    settingsAPI: SettingsAPI;
+    dialogAPI: DialogAPI;
   }
 }

@@ -1,10 +1,13 @@
 // C:\Dev\game-library\src\electron\electron.js
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path  = require('path');
 const fs    = require('fs');
 const { spawn } = require('child_process');
+const http = require('http');
+const url = require('url');
 const GameDatabase = require('./database');
+const SettingsManager = require('./settings');
 
 // At runtime, __dirname === C:\Dev\game-library\src\electron
 // So we need to go up two levels to get to the project root
@@ -13,9 +16,53 @@ const EMUS   = path.join(ROOT, 'emulators');
 const ROMS   = path.join(ROOT, 'roms');
 const is3DS  = f => ['.3ds', '.cia'].some(ext => f.toLowerCase().endsWith(ext));
 
-// Initialize database
+// Initialize database and settings
 const dbPath = path.join(ROOT, 'backend', 'games.db');
 const gameDB = new GameDatabase(ROOT);
+const settingsManager = new SettingsManager(ROOT);
+
+// Create simple HTTP server for serving cover images
+const COVERS_PORT = 3001;
+const coversServer = http.createServer((req, res) => {
+  const parsedUrl = url.parse(req.url, true);
+  
+  // Only serve files from /covers path
+  if (parsedUrl.pathname.startsWith('/covers/')) {
+    const filename = path.basename(parsedUrl.pathname);
+    const filePath = path.join(ROOT, 'public', 'covers', filename);
+    
+    // Check if file exists
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      // Set appropriate content type
+      const ext = path.extname(filename).toLowerCase();
+      let contentType = 'application/octet-stream';
+      if (ext === '.jpg' || ext === '.jpeg') {
+        contentType = 'image/jpeg';
+      } else if (ext === '.png') {
+        contentType = 'image/png';
+      }
+      
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Access-Control-Allow-Origin': '*', // Allow CORS for dev
+        'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+      });
+      
+      fs.createReadStream(filePath).pipe(res);
+    } else {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('File not found');
+    }
+  } else {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not found');
+  }
+});
+
+// Start covers server
+coversServer.listen(COVERS_PORT, () => {
+  console.log(`Cover images server running on http://localhost:${COVERS_PORT}`);
+});
 
 // Utility to check file existence
 const fileExists = p => fs.existsSync(p) && fs.statSync(p).isFile();
@@ -86,12 +133,11 @@ ipcMain.handle('db:deleteAllGames', async () => {
   return await gameDB.deleteAllGames();
 });
 
-// Convert image URL to file path
+// Convert image URL to HTTP URL
 ipcMain.handle('fs:getImageUrl', (event, imageUrl) => {
   if (!imageUrl) return null;
-  // Convert "/covers/filename.jpg" to full file path
-  const fullPath = path.join(ROOT, 'backend', imageUrl);
-  return `file://${fullPath.replace(/\\/g, '/')}`;
+  // Convert "/covers/filename.jpg" to HTTP URL
+  return `http://localhost:${COVERS_PORT}${imageUrl}`;
 });
 
 // File system operations
@@ -128,6 +174,61 @@ ipcMain.handle('launcher:play', (_e, emuPath, romPath) => {
   }
 });
 
+// Settings operations
+ipcMain.handle('settings:getAll', () => {
+  return settingsManager.getAllSettings();
+});
+
+ipcMain.handle('settings:setEmulatorPath', (event, path) => {
+  return settingsManager.setEmulatorPath(path);
+});
+
+ipcMain.handle('settings:setRomsPath', (event, path) => {
+  return settingsManager.setRomsPath(path);
+});
+
+ipcMain.handle('settings:setCoverArtPath', (event, path) => {
+  return settingsManager.setCoverArtPath(path);
+});
+
+ipcMain.handle('settings:update', (event, newSettings) => {
+  return settingsManager.updateSettings(newSettings);
+});
+
+ipcMain.handle('settings:reset', () => {
+  return settingsManager.resetSettings();
+});
+
+// File/folder dialog operations
+ipcMain.handle('dialog:selectFolder', async (event, options) => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openDirectory'],
+    title: options?.title || 'Select Folder',
+    defaultPath: options?.defaultPath || undefined
+  });
+  
+  if (canceled || filePaths.length === 0) {
+    return null;
+  }
+  
+  return filePaths[0];
+});
+
+ipcMain.handle('dialog:selectFile', async (event, options) => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    title: options?.title || 'Select File',
+    defaultPath: options?.defaultPath || undefined,
+    filters: options?.filters || []
+  });
+  
+  if (canceled || filePaths.length === 0) {
+    return null;
+  }
+  
+  return filePaths[0];
+});
+
 // Bootstrapping
 
 app.whenReady().then(async () => {
@@ -143,6 +244,9 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => {
   gameDB.close(); // Clean up database connection
+  coversServer.close(() => {
+    console.log('Cover images server closed');
+  });
   if (process.platform !== 'darwin') {
     app.quit();
   }

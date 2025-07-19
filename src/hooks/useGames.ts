@@ -20,6 +20,13 @@ export default function useGames() {
 
   const loadGames = useCallback(async () => {
     try {
+      // Check if gameAPI is available (Electron context)
+      if (!(window as any).gameAPI) {
+        console.warn('gameAPI not available - running in browser mode');
+        setGames([]);
+        return;
+      }
+      
       // Use the new Electron gameAPI
       const result = await (window as any).gameAPI.getAllGames();
       

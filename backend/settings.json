@@ -1,0 +1,12 @@
+{
+  "folderPaths": {
+    "emulator": "C:\\Dev\\game-library\\emulators\\citra\\citra-qt.exe",
+    "roms": "C:\\Dev\\game-library\\roms\\3ds",
+    "coverArt": ""
+  },
+  "app": {
+    "lastEmulatorType": "3ds",
+    "autoDetectEmulator": true,
+    "rememberWindowSize": true
+  }
+}

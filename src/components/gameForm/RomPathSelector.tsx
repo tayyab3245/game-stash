@@ -1,6 +1,7 @@
 // ROM Path Selector Component
 import React, { useRef, useState } from 'react';
 import { useTheme } from '../../features/theme/ThemeContext';
+import { useSettings } from '../../hooks/useSettings';
 import SoundManager from '../../core/audio/SoundManager';
 
 interface RomPathSelectorProps {
@@ -11,10 +12,37 @@ interface RomPathSelectorProps {
 
 const RomPathSelector: React.FC<RomPathSelectorProps> = ({ romPath, onRomPathChange, isSegmented = false }) => {
   const { theme, mode } = useTheme();
+  const { settings, selectFile, setRomsPath } = useSettings();
   const romRef = useRef<HTMLInputElement>(null);
   const [romName, setRomName] = useState<string>(
-    romPath ? romPath.split(/[/\\]/).pop()! : ""
+    romPath && typeof romPath === 'string' ? romPath.split(/[/\\]/).pop()! : ""
   );
+
+  const handleRomSelect = async () => {
+    SoundManager.playUISelect();
+    
+    // Use native dialog if available, fallback to file input
+    if ((window as any).dialogAPI) {
+      const selectedPath = await selectFile('Select ROM File', [
+        { name: '3DS ROMs', extensions: ['3ds', 'cia'] },
+        { name: 'All Files', extensions: ['*'] }
+      ], settings.romsPath);
+      
+      if (selectedPath && typeof selectedPath === 'string') {
+        onRomPathChange(selectedPath);
+        setRomName(selectedPath.split(/[/\\]/).pop()!);
+        
+        // Save the roms folder path for future use
+        const romFolder = selectedPath.substring(0, Math.max(selectedPath.lastIndexOf('/'), selectedPath.lastIndexOf('\\')));
+        if (romFolder && romFolder !== settings.romsPath) {
+          await setRomsPath(romFolder);
+        }
+      }
+    } else {
+      // Fallback to file input
+      romRef.current?.click();
+    }
+  };
 
   // Unified styling constants
   const unifiedStyles = {
@@ -121,10 +149,7 @@ const RomPathSelector: React.FC<RomPathSelectorProps> = ({ romPath, onRomPathCha
       <>
         <button
           style={modalBtn}
-          onClick={() => {
-            SoundManager.playUISelect();
-            romRef.current?.click();
-          }}
+          onClick={handleRomSelect}
         >
           <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>ROM</div>
           <div style={{ fontSize: 20, opacity: 0.8 }}>
@@ -153,10 +178,7 @@ const RomPathSelector: React.FC<RomPathSelectorProps> = ({ romPath, onRomPathCha
       <div style={sectionHeader}>ROM Path</div>
       <button
         style={modalBtn}
-        onClick={() => {
-          SoundManager.playUISelect();
-          romRef.current?.click();
-        }}
+        onClick={handleRomSelect}
       >
         {romName ? "Change ROM" : "Select ROM"}
       </button>

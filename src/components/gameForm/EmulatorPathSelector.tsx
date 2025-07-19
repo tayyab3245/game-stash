@@ -1,6 +1,7 @@
 // Emulator Path Selector Component
 import React, { useRef, useState } from 'react';
 import { useTheme } from '../../features/theme/ThemeContext';
+import { useSettings } from '../../hooks/useSettings';
 import SoundManager from '../../core/audio/SoundManager';
 
 interface EmulatorPathSelectorProps {
@@ -11,10 +12,36 @@ interface EmulatorPathSelectorProps {
 
 const EmulatorPathSelector: React.FC<EmulatorPathSelectorProps> = ({ emuPath, onEmuPathChange, isSegmented = false }) => {
   const { theme, mode } = useTheme();
+  const { settings, selectFile, setEmulatorPath } = useSettings();
   const emuRef = useRef<HTMLInputElement>(null);
   const [emuName, setEmuName] = useState<string>(
-    emuPath ? emuPath.split(/[/\\]/).pop()! : ""
+    emuPath && typeof emuPath === 'string' ? emuPath.split(/[/\\]/).pop()! : ""
   );
+
+  const handleEmulatorSelect = async () => {
+    SoundManager.playUISelect();
+    
+    // Use native dialog if available, fallback to file input
+    if ((window as any).dialogAPI) {
+      const selectedPath = await selectFile('Select Emulator Executable', [
+        { name: 'Executables', extensions: ['exe'] },
+        { name: 'All Files', extensions: ['*'] }
+      ], settings.emulatorPath);
+      
+      if (selectedPath && typeof selectedPath === 'string') {
+        onEmuPathChange(selectedPath);
+        setEmuName(selectedPath.split(/[/\\]/).pop()!);
+        
+        // Save the emulator path for future use
+        if (selectedPath !== settings.emulatorPath) {
+          await setEmulatorPath(selectedPath);
+        }
+      }
+    } else {
+      // Fallback to file input
+      emuRef.current?.click();
+    }
+  };
 
   // Unified styling constants
   const unifiedStyles = {
@@ -120,10 +147,7 @@ const EmulatorPathSelector: React.FC<EmulatorPathSelectorProps> = ({ emuPath, on
       <>
         <button
           style={modalBtn}
-          onClick={() => {
-            SoundManager.playUISelect();
-            emuRef.current?.click();
-          }}
+          onClick={handleEmulatorSelect}
         >
           <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>EMULATOR</div>
           <div style={{ fontSize: 20, opacity: 0.8 }}>
@@ -152,10 +176,7 @@ const EmulatorPathSelector: React.FC<EmulatorPathSelectorProps> = ({ emuPath, on
       <div style={sectionHeader}>Emulator Path</div>
       <button
         style={modalBtn}
-        onClick={() => {
-          SoundManager.playUISelect();
-          emuRef.current?.click();
-        }}
+        onClick={handleEmulatorSelect}
       >
         {emuName ? "Change Emulator" : "Select Emulator"}
       </button>

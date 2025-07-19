@@ -440,6 +440,8 @@ const GameShelf: React.FC<GameShelfProps> = ({
     
     // Create or update meshes for each texture
     textures.forEach((url, i) => {
+      console.log(`[GameShelf] Processing item ${i}: url="${url}", isAdd=${url === ADD_MARKER}`);
+      
       const scaleW = frontWidthUnits / FRONT_3DS;
       const scaleH = frontHeightUnits / (FULL_H_3DS * HEIGHT_RATIO_3DS);
       const scale = Math.min(scaleW, scaleH);
@@ -452,6 +454,20 @@ const GameShelf: React.FC<GameShelfProps> = ({
       const bevelRadius = Math.min(boxW, boxH) * 0.02;
       
       let mesh = meshes.current[i];
+      
+      // Force mesh recreation if the mesh type changed (add -> game or game -> add)
+      if (mesh && mesh.userData.isAdd !== isAdd) {
+        console.log(`[GameShelf] Mesh type changed at index ${i}: ${mesh.userData.isAdd ? 'ADD' : 'GAME'} -> ${isAdd ? 'ADD' : 'GAME'}, recreating mesh`);
+        shelf.current.remove(mesh);
+        mesh.geometry.dispose();
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach(mat => mat.dispose());
+        } else {
+          (mesh.material as any).dispose();
+        }
+        meshes.current[i] = undefined as any; // Clear the slot
+        mesh = undefined as any; // Force recreation
+      }
       
       if (!mesh) {
         // Create new mesh
@@ -473,11 +489,13 @@ const GameShelf: React.FC<GameShelfProps> = ({
       
       // Load texture for non-add meshes
       if (!isAdd && mesh.userData.url !== url) {
+        console.log(`[GameShelf] Loading texture for GAME mesh ${i}: url="${url}"`);
         loader.load(
           url,
           (tex) => {
             mesh!.material = buildMats3DS(tex, renderer.current);
             mesh!.userData.url = url;
+            console.log(`[GameShelf] Successfully loaded texture for mesh ${i}`);
           },
           undefined,
           (error) => {
@@ -487,6 +505,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
           }
         );
       } else if (isAdd && (!mesh.userData.plusBuilt || mesh.userData.themeText !== themeCtx.theme.text)) {
+        console.log(`[GameShelf] Creating plus symbol for ADD mesh ${i}`);
         // Create "+" symbol for add button (recreate if theme changed)
         
         // Clear existing plus if it exists

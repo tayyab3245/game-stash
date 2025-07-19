@@ -147,7 +147,12 @@ class GameDatabase {
         const filename = uniqueSuffix + '.jpg';
         const filepath = path.join(this.coversDir, filename);
         
-        fs.writeFileSync(filepath, coverBuffer);
+        // Convert ArrayBuffer to Buffer if needed
+        const buffer = coverBuffer instanceof ArrayBuffer 
+          ? Buffer.from(coverBuffer) 
+          : coverBuffer;
+          
+        fs.writeFileSync(filepath, buffer);
         imageUrl = `/covers/${filename}`;
       } catch (err) {
         console.error('[DB] Error saving cover image:', err.message);
@@ -184,9 +189,15 @@ class GameDatabase {
         // Delete old cover if it exists
         const [game] = await this.queryAll('SELECT imageUrl FROM games WHERE id = ?', [id]);
         if (game && game.imageUrl) {
-          const oldPath = path.join(this.projectRoot, 'backend', game.imageUrl);
-          if (fs.existsSync(oldPath)) {
-            fs.unlinkSync(oldPath);
+          const oldPath = path.join(this.coversDir, path.basename(game.imageUrl));
+          try {
+            if (fs.existsSync(oldPath)) {
+              fs.unlinkSync(oldPath);
+              console.log(`[DB] updateGame — Deleted old cover: ${path.basename(game.imageUrl)}`);
+            }
+          } catch (err) {
+            console.warn(`[DB] updateGame — Failed to delete old cover: ${err.message}`);
+            // Continue with new cover save even if old cover deletion fails
           }
         }
 
@@ -195,10 +206,17 @@ class GameDatabase {
         const filename = uniqueSuffix + '.jpg';
         const filepath = path.join(this.coversDir, filename);
         
-        fs.writeFileSync(filepath, coverBuffer);
+        // Convert ArrayBuffer to Buffer if needed
+        const buffer = coverBuffer instanceof ArrayBuffer 
+          ? Buffer.from(coverBuffer) 
+          : coverBuffer;
+          
+        fs.writeFileSync(filepath, buffer);
         gameData.imageUrl = `/covers/${filename}`;
+        console.log(`[DB] updateGame — Saved new cover: ${filename}`);
       } catch (err) {
         console.error('[DB] Error handling cover image update:', err.message);
+        // Continue without cover rather than failing the entire update
       }
     }
 
@@ -228,14 +246,25 @@ class GameDatabase {
       
       // Delete the cover image file if it exists
       if (game && game.imageUrl) {
-        const filePath = path.join(this.projectRoot, 'backend', game.imageUrl);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+        const filePath = path.join(this.coversDir, path.basename(game.imageUrl));
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`[DB] deleteGame — Deleted cover image: ${path.basename(game.imageUrl)}`);
+          }
+        } catch (err) {
+          console.warn(`[DB] deleteGame — Failed to delete cover image: ${err.message}`);
+          // Continue with database deletion even if file deletion fails
         }
       }
 
       // Delete the game record
-      await this.runQuery('DELETE FROM games WHERE id = ?', [id]);
+      const result = await this.runQuery('DELETE FROM games WHERE id = ?', [id]);
+      
+      if (result.changes === 0) {
+        return { success: false, error: 'Game not found' };
+      }
+
       console.log(`[DB] deleteGame — Deleted game ${id}`);
       return { success: true };
     } catch (err) {
@@ -255,9 +284,14 @@ class GameDatabase {
       const rows = await this.queryAll('SELECT imageUrl FROM games');
       rows.forEach(row => {
         if (row.imageUrl) {
-          const filePath = path.join(this.projectRoot, 'backend', row.imageUrl);
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+          const filePath = path.join(this.coversDir, path.basename(row.imageUrl));
+          try {
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              console.log(`[DB] replaceCollection — Deleted cover: ${path.basename(row.imageUrl)}`);
+            }
+          } catch (err) {
+            console.warn(`[DB] replaceCollection — Failed to delete cover: ${err.message}`);
           }
         }
       });
@@ -300,9 +334,14 @@ class GameDatabase {
       const rows = await this.queryAll('SELECT imageUrl FROM games');
       rows.forEach(row => {
         if (row.imageUrl) {
-          const filePath = path.join(this.projectRoot, 'backend', row.imageUrl);
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+          const filePath = path.join(this.coversDir, path.basename(row.imageUrl));
+          try {
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              console.log(`[DB] deleteAllGames — Deleted cover: ${path.basename(row.imageUrl)}`);
+            }
+          } catch (err) {
+            console.warn(`[DB] deleteAllGames — Failed to delete cover: ${err.message}`);
           }
         }
       });

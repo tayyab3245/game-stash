@@ -45,6 +45,8 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
   const [showHints, setShowHints] = useState(true);
   const [forceShowHints, setForceShowHints] = useState(false);
   const [hintMessage, setHintMessage] = useState<string | null>(null);
+  const [commandBarVisible, setCommandBarVisible] = useState(true);
+  const [gameTransitioning, setGameTransitioning] = useState(false);
 
   /* ── load games on mount ── */
   useEffect(() => {
@@ -57,6 +59,27 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
       setSelIdx(0);
     }
   }, [games.length, selIdx]);
+
+  /* ── Handle command bar animation when game selection changes ── */
+  useEffect(() => {
+    if (selIdx !== null && !modalOpen) {
+      // Hide command bar immediately when game changes
+      setCommandBarVisible(false);
+      setGameTransitioning(true);
+      
+      // Show command bar after a delay (allowing game to center)
+      const timer = setTimeout(() => {
+        setCommandBarVisible(true);
+        setGameTransitioning(false);
+      }, 600); // Adjust timing to match your 3D animation duration
+      
+      return () => clearTimeout(timer);
+    } else {
+      // No game selected or modal is open, hide command bar
+      setCommandBarVisible(false);
+      setGameTransitioning(false);
+    }
+  }, [selIdx, modalOpen]);
 
   /* ── time display ── */
   const [now, setNow] = useState(new Date());
@@ -203,7 +226,18 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
             key={r}
             mode={r as 1 | 2}
             filled={rowMode === r}
-            onChange={() => setRowMode(r as 1 | 2)}
+            onChange={(newRowMode) => {
+              // Hide command bar during row mode transition
+              setCommandBarVisible(false);
+              setGameTransitioning(true);
+              setRowMode(newRowMode as 1 | 2);
+              
+              // Show command bar after transition
+              setTimeout(() => {
+                setCommandBarVisible(true);
+                setGameTransitioning(false);
+              }, 600);
+            }}
           />
         ))}
       </div>
@@ -240,7 +274,11 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
               setModalOpen(true);
               setSelIdx(null);
             } else {
-              // Game selected
+              // Game selected - trigger command bar animation
+              if (idx !== selIdx) {
+                setCommandBarVisible(false);
+                setGameTransitioning(true);
+              }
               setSelIdx(idx);
             }
           }}
@@ -262,6 +300,7 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
         onEdit={handleEdit}
         canLaunch={canLaunch}
         editEnabled={editEnabled}
+        visible={commandBarVisible}
       />
 
       {/* Add/Edit modal */}

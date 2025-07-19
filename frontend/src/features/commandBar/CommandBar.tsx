@@ -10,6 +10,7 @@ export interface CommandBarProps {
   onEdit: () => void;
   canLaunch?: boolean;
   editEnabled?: boolean;
+  visible?: boolean; // New prop to control visibility
 }
 
 const CommandBar: React.FC<CommandBarProps> = ({
@@ -17,6 +18,7 @@ const CommandBar: React.FC<CommandBarProps> = ({
   onEdit,
   canLaunch = false,
   editEnabled = false,
+  visible = true,
 }) => {
   const { theme, mode } = useTheme();
   const styles = mode === 'light' ? lightStyles.commandBar : darkStyles.commandBar;
@@ -67,7 +69,7 @@ const CommandBar: React.FC<CommandBarProps> = ({
     transform: 'translateY(0px)',
   };
 
-  // Container styling
+  // Container styling with slide animation
   const containerStyle = {
     ...styles.container,
     position: 'fixed' as const,
@@ -79,6 +81,10 @@ const CommandBar: React.FC<CommandBarProps> = ({
     gap: '1px',
     padding: '0 20px 20px 20px',
     zIndex: 1000,
+    transform: visible ? 'translateY(0px)' : 'translateY(100px)',
+    opacity: visible ? 1 : 0,
+    transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease',
+    pointerEvents: (visible ? 'auto' : 'none') as 'auto' | 'none',
   };
 
   const handleEdit = () => {

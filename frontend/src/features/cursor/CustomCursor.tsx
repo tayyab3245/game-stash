@@ -181,8 +181,8 @@ const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
               borderRadius: getComputedStyle(isInteractive).borderRadius || '8px'
             } as any);
             
-            const scaleX = (rect.width + 8) / 40;
-            const scaleY = (rect.height + 8) / 40;
+            const scaleX = (rect.width + 8) / 50; // Updated from 40 to 50
+            const scaleY = (rect.height + 8) / 50; // Updated from 40 to 50
             const avgScale = Math.max(scaleX, scaleY, 1.5);
             targetScale.current = isClicking ? avgScale * 0.8 : avgScale;
           } else {
@@ -207,8 +207,8 @@ const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
                   borderRadius: getComputedStyle(isInteractive).borderRadius || '8px'
                 } as any);
                 
-                const scaleX = (rect.width + 8) / 40;
-                const scaleY = (rect.height + 8) / 40;
+                const scaleX = (rect.width + 8) / 50; // Updated from 40 to 50
+                const scaleY = (rect.height + 8) / 50; // Updated from 40 to 50
                 const avgScale = Math.max(scaleX, scaleY, 1.5);
                 targetScale.current = isClicking ? avgScale * 0.8 : avgScale;
                 
@@ -234,8 +234,8 @@ const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
             borderRadius: getComputedStyle(isInteractive).borderRadius || '8px'
           } as any);
           
-          const scaleX = (rect.width + 8) / 40;
-          const scaleY = (rect.height + 8) / 40;
+          const scaleX = (rect.width + 8) / 50; // Updated from 40 to 50
+          const scaleY = (rect.height + 8) / 50; // Updated from 40 to 50
           const avgScale = Math.max(scaleX, scaleY, 1.5);
           targetScale.current = isClicking ? avgScale * 0.8 : avgScale;
         }
@@ -305,8 +305,8 @@ const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
         style={{
           left: `${buttonBounds ? buttonBounds.x : position.x}px`,
           top: `${buttonBounds ? buttonBounds.y : position.y}px`,
-          width: buttonBounds ? `${buttonBounds.width + 8}px` : '40px',
-          height: buttonBounds ? `${buttonBounds.height + 8}px` : '40px',
+          width: buttonBounds ? `${buttonBounds.width + 8}px` : '50px', // Updated from 40px to 50px
+          height: buttonBounds ? `${buttonBounds.height + 8}px` : '50px', // Updated from 40px to 50px
           borderRadius: buttonBounds ? buttonBounds.borderRadius : '50%',
           transform: buttonBounds 
             ? `translate(-50%, -50%) scale(1)` 

@@ -1,11 +1,12 @@
 // Legacy 3D Game Shelf Component with BackgroundContainer integration
-import React, { useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useEffect, useRef, useLayoutEffect, useState } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry';
 import SoundManager from '../audio/SoundManager';
 import NavigationButton from '../../features/navigation/NavigationButton';
 import BackgroundContainer from '../../features/backgroundContainer/BackgroundContainer';
 import { BackgroundContainerRef } from '../../features/backgroundContainer/types';
+import { HoverHintManager } from '../../features/hoverHints';
 import {
   ADD_MARKER,
   FULL_H_3DS,
@@ -32,6 +33,9 @@ export interface GameShelfProps {
   onSelect?: (idx: number | null) => void;  
   onLongPress?: (idx: number) => void;       
   rows?: 1 | 2 ;            // 1 / 2 / 4 rows
+  showHints?: boolean;
+  forceShowHints?: boolean;
+  onHintsChange?: (show: boolean) => void;
 }
   
 const GameShelf: React.FC<GameShelfProps> = ({
@@ -43,6 +47,9 @@ const GameShelf: React.FC<GameShelfProps> = ({
   onSelect,
   onLongPress,
   rows = 1,
+  showHints = true,
+  forceShowHints = false,
+  onHintsChange,
 }) => {
   const themeCtx = useTheme();
 
@@ -85,9 +92,16 @@ const GameShelf: React.FC<GameShelfProps> = ({
   // Track row changes for animation
   const prevRows = useRef<1 | 2>(rows);
   const clock = useRef<THREE.Clock>(new THREE.Clock());
+  
+  // State for hover hints
+  const [selectedGamePosition, setSelectedGamePosition] = useState<{ x: number; y: number } | undefined>();
 
   // Fixed-selector selection system with smooth animation
   const selectMesh = (mesh: THREE.Mesh | null, playSound?: boolean, navigationDirection?: 'left' | 'right' | 'up' | 'down' | null) => {
+    // Clear hints immediately when navigating
+    onHintsChange?.(false);
+    setSelectedGamePosition(undefined);
+    
     // Clear old selection
     if (selectedRef.current) {
       // Scale will be handled by layout system - no manual scale reset needed
@@ -171,6 +185,37 @@ const GameShelf: React.FC<GameShelfProps> = ({
     }
     
     if (playSound) SoundManager.playUISelect();
+    
+    // Update position for hover hints
+    updateSelectedGamePosition();
+    
+    // Reset hints for new selection (after position is updated)
+    setTimeout(() => {
+      onHintsChange?.(true);
+    }, 100);
+  };
+
+  // Function to calculate screen position of selected game
+  const updateSelectedGamePosition = () => {
+    if (!selectedRef.current || !container.current || !camera.current) {
+      setSelectedGamePosition(undefined);
+      return;
+    }
+
+    // Get the world position of the selected mesh
+    const worldPosition = new THREE.Vector3();
+    selectedRef.current.getWorldPosition(worldPosition);
+
+    // Convert world position to screen coordinates
+    const screenPosition = worldPosition.clone();
+    screenPosition.project(camera.current);
+
+    // Convert normalized device coordinates to screen pixels
+    const rect = container.current.getBoundingClientRect();
+    const x = (screenPosition.x * 0.5 + 0.5) * rect.width + rect.left;
+    const y = (screenPosition.y * -0.5 + 0.5) * rect.height + rect.top;
+
+    setSelectedGamePosition({ x, y });
   };
 
   // Connect to shelf controls with BackgroundContainer integration
@@ -313,6 +358,8 @@ const GameShelf: React.FC<GameShelfProps> = ({
         const diff = targetX - currentX;
         if (Math.abs(diff) > 0.001) {
           shelf.current.position.x += diff * PAN_DAMPING;
+          // Update hover hint position when shelf moves
+          updateSelectedGamePosition();
         } else {
           shelf.current.position.x = targetX;
         }
@@ -366,6 +413,11 @@ const GameShelf: React.FC<GameShelfProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Update hover hint position when window resizes or game changes
+  useEffect(() => {
+    updateSelectedGamePosition();
+  }, [selectedRef.current, rows]);
 
   // Mesh creation and texture loading effect (from legacy GameShelf)
   useEffect(() => {
@@ -813,6 +865,16 @@ const GameShelf: React.FC<GameShelfProps> = ({
         onMouseLeave={stopHold}
         size={72}
       />
+      
+      {/* Hover Hints for game interaction guidance */}
+      <HoverHintManager
+        gridMode={rows === 1 ? 'single' : 'double'}
+        gameSelected={!!selectedRef.current && !selectedRef.current.userData.isAdd && (showHints || forceShowHints)}
+        gamePosition={selectedGamePosition}
+        onDismiss={() => onHintsChange?.(false)}
+        forceShow={forceShowHints}
+      />
+      
     </div>
   );
 };

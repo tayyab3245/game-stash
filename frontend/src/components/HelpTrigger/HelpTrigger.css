@@ -1,0 +1,108 @@
+/* Help Trigger Button - Fixed position in bottom right corner */
+.help-trigger {
+  position: fixed;
+  right: 20px;
+  bottom: 60px; /* Default position, can be overridden with inline style */
+  z-index: 1000;
+  
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  
+  /* Theme colors will be applied by specific theme rules */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  
+  /* Base styling - theme rules will override colors */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  
+  /* Smooth animations */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0px) scale(1);
+  will-change: transform, box-shadow;
+  
+  /* Subtle breathing animation */
+  animation: helpTriggerBreathe 3s ease-in-out infinite;
+}
+
+.help-trigger svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Theme-aware styling matching other UI buttons */
+[data-theme="dark"] .help-trigger {
+  background: rgba(255, 255, 255, 0.9);
+  color: #141414;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .help-trigger:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  animation: none; /* Stop breathing on hover */
+}
+
+[data-theme="dark"] .help-trigger:active {
+  transform: translateY(2px) scale(0.92); /* More pronounced press effect */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: all 0.05s ease; /* Faster response for press */
+}
+
+[data-theme="light"] .help-trigger {
+  background: rgba(20, 20, 20, 0.9);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .help-trigger:hover {
+  background: rgba(20, 20, 20, 1);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  animation: none; /* Stop breathing on hover */
+}
+
+[data-theme="light"] .help-trigger:active {
+  transform: translateY(2px) scale(0.92); /* More pronounced press effect */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: all 0.05s ease; /* Faster response for press */
+}
+
+/* Active state when hints are showing - blue accent */
+.help-trigger--active {
+  background: rgba(45, 123, 255, 0.9) !important;
+  color: white !important;
+  animation: none; /* Stop breathing when active */
+}
+
+.help-trigger--active:hover {
+  background: rgba(45, 123, 255, 1) !important;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(45, 123, 255, 0.3);
+}
+
+.help-trigger--active:active {
+  transform: translateY(2px) scale(0.92);
+  box-shadow: 0 1px 3px rgba(45, 123, 255, 0.4);
+  transition: all 0.05s ease;
+}
+
+/* Breathing animation */
+@keyframes helpTriggerBreathe {
+  0%, 100% { 
+    opacity: 1; 
+    transform: translateY(0px) scale(1);
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: translateY(-1px) scale(0.98);
+  }
+}

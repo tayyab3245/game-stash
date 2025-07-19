@@ -12,6 +12,7 @@ import CommandBar from "./features/commandBar/CommandBar";
 import Header from "./features/header/Header";
 import VolumeButton from "./features/volume/VolumeButton";
 import GridButton from "./features/grid/GridButton";
+import HelpTrigger from "./components/HelpTrigger";
 // Import theme styles
 import { lightStyles } from "./core/theme/light.styles";
 import { darkStyles } from "./core/theme/dark.styles";
@@ -41,6 +42,8 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
   const [volumeLevel, setVolumeLevel] = useState<VolumeLevel>(2);
   const [rowMode, setRowMode] = useState<1 | 2>(1);
   const [editTitle, setEditTitle] = useState("");
+  const [showHints, setShowHints] = useState(true);
+  const [forceShowHints, setForceShowHints] = useState(false);
 
   /* ── load games on mount ── */
   useEffect(() => {
@@ -149,6 +152,24 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
     setEditTitle("");
   };
 
+  // Function to manually trigger/toggle hints
+  const triggerHints = () => {
+    console.log('Toggling hints manually from Main');
+    if (selIdx !== null && rowMode === 1) {
+      if (showHints || forceShowHints) {
+        // If hints are showing, turn them off
+        setShowHints(false);
+        setForceShowHints(false);
+      } else {
+        // If hints are not showing, turn them on
+        setShowHints(true);
+        setForceShowHints(true);
+        // Reset force show after a delay to allow natural behavior to resume
+        setTimeout(() => setForceShowHints(false), 5000);
+      }
+    }
+  };
+
   const initialData = modalMode === "edit" && selectedGame ? {
     title: selectedGame.title,
     romPath: selectedGame.romPath,
@@ -203,6 +224,9 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
           width="100%"
           height="100%"
           rows={rowMode}
+          showHints={showHints}
+          forceShowHints={forceShowHints}
+          onHintsChange={(show) => setShowHints(show)}
           onSelect={(idx) => {
             if (idx === -1) {
               // Add button clicked
@@ -277,6 +301,14 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
           />
         </div>
       )}
+      
+      {/* Help Trigger Button - always visible when a game is selected in single row mode */}
+      <HelpTrigger
+        visible={rowMode === 1 && selIdx !== null && !modalOpen}
+        hintsActive={showHints || forceShowHints}
+        yOffset={690} // Adjust this value to move the button up/down
+        onClick={triggerHints}
+      />
     </div>
   );
 }

@@ -32,7 +32,7 @@ export interface GameShelfProps {
   frontHeightUnits?: number;  
   onSelect?: (idx: number | null) => void;  
   onLongPress?: (idx: number) => void;       
-  rows?: 1 | 2 ;            // 1 / 2 / 4 rows
+  rows?: 1 | 2 ;            // 1 / 2 
   showHints?: boolean;
   forceShowHints?: boolean;
   onHintsChange?: (show: boolean) => void;
@@ -87,7 +87,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
   // 0 = first game at left edge
   // positive values = move games to the right
   // negative values = move games to the left
-  const STARTING_POSITION_OFFSET = -20; // 
+  const STARTING_POSITION_OFFSET = -10; // 
 
   // Track row changes for animation
   const prevRows = useRef<1 | 2>(rows);
@@ -465,8 +465,8 @@ const GameShelf: React.FC<GameShelfProps> = ({
         } else {
           (mesh.material as any).dispose();
         }
-        meshes.current[i] = undefined as any; // Clear the slot
-        mesh = undefined as any; // Force recreation
+        // Don't set to undefined - just clear the reference to force recreation
+        mesh = null as any; // Force recreation without breaking array structure
       }
       
       if (!mesh) {
@@ -617,19 +617,12 @@ const GameShelf: React.FC<GameShelfProps> = ({
     const layoutTargets = all.map((m, i) => {
       let r: number, c: number;
       
-      // Critical: Use legacy sorting logic
+      // Improved layout logic for double row mode
       if (rows === 2) {
-        // For 2 rows, custom pattern: first item goes bottom-left, then alternates top/bottom in subsequent columns
-        if (i === 0) {
-          // First item: bottom-left (column 0, row 1)
-          c = 0;
-          r = 1;
-        } else {
-          // For remaining items: alternate top/bottom in columns starting from column 1
-          const adjustedIndex = i - 1; // Adjust for the first item being special
-          c = Math.floor(adjustedIndex / 2) + 1; // Start from column 1, increment every 2 items
-          r = adjustedIndex % 2; // Alternate between top (0) and bottom (1)
-        }
+        // For 2 rows, use column-major ordering: fill columns top to bottom
+        // This makes the first game appear at top-left (more intuitive)
+        c = Math.floor(i / rows); // Column index
+        r = i % rows; // Row index (0 = top, 1 = bottom)
       } else {
         // For 1 row, use standard row-major sorting
         r = Math.floor(i / cols);

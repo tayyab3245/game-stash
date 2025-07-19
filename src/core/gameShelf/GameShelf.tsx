@@ -82,12 +82,13 @@ const GameShelf: React.FC<GameShelfProps> = ({
   const GRID_ANIM_DURATION = SELECTOR.GRID_ANIM_DURATION;
   const GRID_ANIM_HEIGHT = SELECTOR.GRID_ANIM_HEIGHT;
 
-  // ⚙️ MANUAL STARTING POSITION KNOB ⚙️
-  // Adjust this value to move the first game's starting position:
+  // ⚙️ MANUAL STARTING POSITION KNOBS ⚙️
+  // Adjust these values to move the first game's starting position:
   // 0 = first game at left edge
   // positive values = move games to the right
   // negative values = move games to the left
-  const STARTING_POSITION_OFFSET = -10; // 
+  const STARTING_POSITION_OFFSET_1_ROW = -10; // For single row mode
+  const STARTING_POSITION_OFFSET_2_ROW = -15; // For double row mode (separate offset) 
 
   // Track row changes for animation
   const prevRows = useRef<1 | 2>(rows);
@@ -128,7 +129,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
     
     let shouldCenter = true; // Default to centering
     
-    // Apply centering logic based on row mode
+    // Apply centering logic based on row mode and actual layout position
     if (rows === 1) {
       // Don't center the first two games to prevent white space on the left
       // User requirement: "centrering should take effefct after teh second game object"
@@ -136,9 +137,10 @@ const GameShelf: React.FC<GameShelfProps> = ({
         shouldCenter = false;
       }
     } else if (rows === 2) {
-      // For double row mode, only allow centering starting from game 6 onwards
-      // This prevents any subtle pulling for games 0,1,2,3,4,5 that creates empty space
-      if (gameIndex <= 5) {
+      // For double row mode with column-major layout, calculate which column the game is in
+      // Don't center games in the first two columns (columns 0 and 1)
+      const gameColumn = Math.floor(gameIndex / rows); // Column index based on game position
+      if (gameColumn <= 1) {
         shouldCenter = false;
       }
     }
@@ -149,11 +151,11 @@ const GameShelf: React.FC<GameShelfProps> = ({
       shouldCenter,
       navigationDirection,
       gameName: mesh.userData.game?.name || 'Unknown',
-      currentCol: rows === 2 ? Math.floor(gameIndex / rows) : 'N/A',
+      gameColumn: rows === 2 ? Math.floor(gameIndex / rows) : 'N/A',
       meshPositionX: mesh.position.x,
       currentShelfX: shelf.current.position.x,
       willSetTargetTo: shouldCenter ? (-mesh.position.x) : 'no change',
-      debugInfo: `Mode: ${rows}-row, Game: ${gameIndex}, Should center: ${shouldCenter}`
+      debugInfo: `Mode: ${rows}-row, Game: ${gameIndex}, Column: ${rows === 2 ? Math.floor(gameIndex / rows) : 'N/A'}, Should center: ${shouldCenter}`
     });
     
     if (shouldCenter) {
@@ -163,8 +165,9 @@ const GameShelf: React.FC<GameShelfProps> = ({
     } else {
       // Don't center - keep the shelf at its current position
       console.log('Not centering - keeping shelf position at:', shelf.current.position.x);
-      // For the first two games, maintain the manual starting position instead of resetting to 0
-      const manualStartPosition = -padLeftRef.current + STARTING_POSITION_OFFSET;
+      // For the first games, maintain the manual starting position instead of resetting to 0
+      const currentOffset = rows === 1 ? STARTING_POSITION_OFFSET_1_ROW : STARTING_POSITION_OFFSET_2_ROW;
+      const manualStartPosition = -padLeftRef.current + currentOffset;
       
       // Only reset if we're scrolled past the manual starting position to the left
       if (shelf.current.position.x < manualStartPosition) {
@@ -724,6 +727,27 @@ const GameShelf: React.FC<GameShelfProps> = ({
       // This ensures the selection system knows where the selected game will be
       if (selectedGame && selectedGameIndex >= 0) {
         console.log('🔄 Selection will be restored for game', selectedGameIndex, 'after grid transition completes');
+        
+        // Fix centering bug: Reset shelf position if selected game shouldn't be centered in new layout
+        const playableGames = all.filter(m => !m.userData.isAdd);
+        const gameIndex = playableGames.indexOf(selectedGame);
+        let shouldBeCentered = true;
+        
+        if (rows === 1) {
+          if (gameIndex <= 1) shouldBeCentered = false;
+        } else if (rows === 2) {
+          const gameColumn = Math.floor(gameIndex / rows);
+          if (gameColumn <= 1) shouldBeCentered = false;
+        }
+        
+        if (!shouldBeCentered) {
+          // Reset to manual starting position for non-centered games
+          const currentOffset = rows === 1 ? STARTING_POSITION_OFFSET_1_ROW : STARTING_POSITION_OFFSET_2_ROW;
+          const manualStartPosition = -padLeft + currentOffset;
+          shelfTargetX.current = clamp(manualStartPosition, bounds.current.min, bounds.current.max);
+          console.log('🔄 Resetting shelf position to manual start for non-centered game:', manualStartPosition);
+        }
+        
         // Don't show outline during transition - it will reappear when animation finishes
       }
     } else {
@@ -756,14 +780,15 @@ const GameShelf: React.FC<GameShelfProps> = ({
         selectMesh(firstPlayable, false, null); // Initial selection, no direction
         
         // 🔧 MANUAL POSITIONING: Use the knob to adjust starting position
-        const targetShelfX = -padLeft + STARTING_POSITION_OFFSET;
+        const currentOffset = rows === 1 ? STARTING_POSITION_OFFSET_1_ROW : STARTING_POSITION_OFFSET_2_ROW;
+        const targetShelfX = -padLeft + currentOffset;
         shelf.current.position.x = targetShelfX;
         shelfTargetX.current = targetShelfX;
         
         console.log('🔧 Manual positioning with knob:', {
           firstGamePosInShelf: firstPlayable.position.x,
           padLeft: padLeft,
-          offset: STARTING_POSITION_OFFSET,
+          offset: currentOffset,
           finalShelfPos: targetShelfX,
           resultingGameScreenPos: firstPlayable.position.x + targetShelfX
         });

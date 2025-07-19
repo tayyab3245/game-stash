@@ -23,8 +23,7 @@ const GridButton: React.FC<GridButtonProps> = ({
     if (disabled) return;
     
     setIsChanging(true);
-    const nextMode = GridLogic.getNextMode(mode);
-    onChange(nextMode);
+    onChange(mode); // Set to this button's mode, don't toggle
     
     // Reset animation state
     setTimeout(() => setIsChanging(false), 200);

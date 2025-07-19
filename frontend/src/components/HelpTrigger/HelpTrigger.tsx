@@ -15,8 +15,8 @@ const HelpTrigger: React.FC<HelpTriggerProps> = ({ onClick, visible, hintsActive
     <button 
       className={`help-trigger ${hintsActive ? 'help-trigger--active' : ''}`}
       onClick={onClick}
-      aria-label={hintsActive ? "Hide hints" : "Show hints"}
-      title={hintsActive ? "Hide navigation hints" : "Show navigation hints"}
+      aria-label={hintsActive ? "Hints enabled - click to disable" : "Hints disabled - click to enable"}
+      title={hintsActive ? "Hints enabled" : "Hints disabled"}
       style={{ bottom: `${yOffset}px` }} // Only keep the positioning override
     >
       <svg 

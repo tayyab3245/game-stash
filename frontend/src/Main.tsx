@@ -44,6 +44,7 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
   const [editTitle, setEditTitle] = useState("");
   const [showHints, setShowHints] = useState(true);
   const [forceShowHints, setForceShowHints] = useState(false);
+  const [hintMessage, setHintMessage] = useState<string | null>(null);
 
   /* ── load games on mount ── */
   useEffect(() => {
@@ -160,13 +161,18 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
         // If hints are showing, turn them off
         setShowHints(false);
         setForceShowHints(false);
+        setHintMessage("Hints disabled");
       } else {
         // If hints are not showing, turn them on
         setShowHints(true);
         setForceShowHints(true);
+        setHintMessage("Hints enabled");
         // Reset force show after a delay to allow natural behavior to resume
         setTimeout(() => setForceShowHints(false), 5000);
       }
+      
+      // Clear message after 2 seconds
+      setTimeout(() => setHintMessage(null), 2000);
     }
   };
 
@@ -309,6 +315,43 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
         yOffset={690} // Adjust this value to move the button up/down
         onClick={triggerHints}
       />
+      
+      {/* Hint Status Message - positioned next to help button */}
+      {hintMessage && (
+        <div style={{
+          position: 'fixed',
+          bottom: '685px', // Align with help button
+          right: '85px', // Position to the left of help button
+          background: theme.mode === 'light' ? 'rgba(20, 20, 20, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+          color: theme.mode === 'light' ? '#ffffff' : '#141414',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          fontSize: '14px',
+          fontWeight: '500',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+          zIndex: 1001,
+          whiteSpace: 'nowrap',
+          animation: 'helpMessageFadeInOut 2s ease-in-out forwards',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+        }}>
+          {hintMessage}
+          {/* Arrow pointing to button */}
+          <div style={{
+            width: 0,
+            height: 0,
+            borderLeft: '6px solid ' + (theme.mode === 'light' ? 'rgba(20, 20, 20, 0.9)' : 'rgba(255, 255, 255, 0.9)'),
+            borderTop: '6px solid transparent',
+            borderBottom: '6px solid transparent',
+            position: 'absolute',
+            right: '-6px',
+            top: '50%',
+            transform: 'translateY(-50%)'
+          }} />
+        </div>
+      )}
     </div>
   );
 }

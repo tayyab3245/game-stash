@@ -5,18 +5,23 @@
   bottom: 60px; /* Default position, can be overridden with inline style */
   z-index: 1000;
   
-  width: 44px;
-  height: 44px;
+  width: 56px; /* Increased size */
+  height: 56px; /* Increased size */
   border-radius: 50%;
   border: none;
   cursor: pointer;
   
-  /* Theme colors will be applied by specific theme rules */
+  /* Black background with rim light effect */
+  background: rgba(20, 20, 20, 0.9);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3); /* Rim light */
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   
-  /* Base styling - theme rules will override colors */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* Enhanced shadow for depth */
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   
   display: flex;
   align-items: center;
@@ -33,66 +38,62 @@
 }
 
 .help-trigger svg {
-  width: 20px;
-  height: 20px;
+  width: 24px; /* Increased from 20px */
+  height: 24px; /* Increased from 20px */
+  transition: color 0.3s ease;
 }
 
-/* Theme-aware styling matching other UI buttons */
-[data-theme="dark"] .help-trigger {
-  background: rgba(255, 255, 255, 0.9);
-  color: #141414;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+/* Active state when hints are showing - blue SVG */
+.help-trigger--active svg {
+  color: #2d7bff; /* Blue color for active state */
 }
 
-[data-theme="dark"] .help-trigger:hover {
-  background: rgba(255, 255, 255, 1);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-  animation: none; /* Stop breathing on hover */
-}
-
-[data-theme="dark"] .help-trigger:active {
-  transform: translateY(2px) scale(0.92); /* More pronounced press effect */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  transition: all 0.05s ease; /* Faster response for press */
-}
-
+/* Light theme styling */
 [data-theme="light"] .help-trigger {
-  background: rgba(20, 20, 20, 0.9);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: rgba(240, 240, 240, 0.9);
+  color: #141414;
+  border: 2px solid rgba(0, 0, 0, 0.2); /* Rim light for light theme */
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Hover effects */
+.help-trigger:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 
+    0 6px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  animation: none; /* Stop breathing on hover */
 }
 
 [data-theme="light"] .help-trigger:hover {
-  background: rgba(20, 20, 20, 1);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-  animation: none; /* Stop breathing on hover */
+  box-shadow: 
+    0 6px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Press effects */
+.help-trigger:active {
+  transform: translateY(1px) scale(0.95);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.1s ease;
 }
 
 [data-theme="light"] .help-trigger:active {
-  transform: translateY(2px) scale(0.92); /* More pronounced press effect */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: all 0.05s ease; /* Faster response for press */
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* Active state when hints are showing - blue accent */
 .help-trigger--active {
-  background: rgba(45, 123, 255, 0.9) !important;
-  color: white !important;
+  /* Keep background the same, only change SVG color */
   animation: none; /* Stop breathing when active */
-}
-
-.help-trigger--active:hover {
-  background: rgba(45, 123, 255, 1) !important;
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 6px 16px rgba(45, 123, 255, 0.3);
-}
-
-.help-trigger--active:active {
-  transform: translateY(2px) scale(0.92);
-  box-shadow: 0 1px 3px rgba(45, 123, 255, 0.4);
-  transition: all 0.05s ease;
 }
 
 /* Breathing animation */
@@ -104,5 +105,28 @@
   50% { 
     opacity: 0.8; 
     transform: translateY(-1px) scale(0.98);
+  }
+}
+
+/* Help message popup animation */
+@keyframes helpMessageFadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateX(10px) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(0) scale(1.05);
+  }
+  30% {
+    transform: translateX(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-5px) scale(0.9);
   }
 }

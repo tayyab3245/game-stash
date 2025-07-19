@@ -11,17 +11,18 @@
   border: none;
   cursor: pointer;
   
-  /* Black background with rim light effect */
-  background: rgba(20, 20, 20, 0.9);
+  /* Dark theme matching colors from dark.styles.ts */
+  background: linear-gradient(180deg, #495057 0%, #343a40 95%);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3); /* Rim light */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* Rim light */
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   
-  /* Enhanced shadow for depth */
+  /* Enhanced shadow matching dark theme system */
   box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    inset 0 2px 3px rgba(255, 255, 255, 0.08),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.40),
+    0 6px 12px rgba(0, 0, 0, 0.30);
   
   display: flex;
   align-items: center;
@@ -37,25 +38,27 @@
   animation: helpTriggerBreathe 3s ease-in-out infinite;
 }
 
+/* Always use blue color for SVG icon for consistency */
+.help-trigger svg {
+  color: #2d7bff; /* Always blue, regardless of active state */
+}
+
 .help-trigger svg {
   width: 24px; /* Increased from 20px */
   height: 24px; /* Increased from 20px */
+  color: #2d7bff; /* Always blue for consistency */
   transition: color 0.3s ease;
-}
-
-/* Active state when hints are showing - blue SVG */
-.help-trigger--active svg {
-  color: #2d7bff; /* Blue color for active state */
 }
 
 /* Light theme styling */
 [data-theme="light"] .help-trigger {
-  background: rgba(240, 240, 240, 0.9);
-  color: #141414;
-  border: 2px solid rgba(0, 0, 0, 0.2); /* Rim light for light theme */
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 95%);
+  color: #495057;
+  border: 1px solid rgba(0, 0, 0, 0.08); /* Subtle rim */
   box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(0, 0, 0, 0.1);
+    inset 0 2px 3px rgba(255, 255, 255, 0.8),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.08),
+    0 6px 12px rgba(0, 0, 0, 0.10);
 }
 
 /* Hover effects */

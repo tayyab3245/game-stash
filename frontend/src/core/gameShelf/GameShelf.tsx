@@ -511,8 +511,8 @@ const GameShelf: React.FC<GameShelfProps> = ({
         
         const barGeoH = new RoundedBoxGeometry(barL, barT, barD, 6, r);
         const barGeoV = new RoundedBoxGeometry(barT, barL, barD, 6, r);
-        // Use orange in light mode (same as selector frame), white in dark mode
-        const plusColor = themeCtx.theme.text === '#141414' ? 0xffc14d : 0xffffff;
+        // Always use orange for consistent plus sign color across themes
+        const plusColor = 0xffc14d; // Orange color for both light and dark themes
         const barMat = new THREE.MeshBasicMaterial({ color: plusColor });
         
         const barH = new THREE.Mesh(barGeoH, barMat);

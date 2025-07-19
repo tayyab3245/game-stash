@@ -316,12 +316,12 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
         onClick={triggerHints}
       />
       
-      {/* Hint Status Message - positioned next to help button */}
+      {/* Hint Status Message - positioned next to help button in top right */}
       {hintMessage && (
         <div style={{
           position: 'fixed',
-          bottom: '685px', // Align with help button
-          right: '85px', // Position to the left of help button
+          top: 'calc(100vh - 690px - 45px)', // Moved up by 12px (was -28px, now -40px)
+          right: '105px', // Added more spacing from button (was 85px, now 105px)
           background: theme.mode === 'light' ? 'rgba(20, 20, 20, 0.9)' : 'rgba(255, 255, 255, 0.9)',
           color: theme.mode === 'light' ? '#ffffff' : '#141414',
           padding: '8px 12px',
@@ -335,7 +335,7 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
           animation: 'helpMessageFadeInOut 2s ease-in-out forwards',
           display: 'flex',
           alignItems: 'center',
-          gap: '4px'
+          gap: '4px',
         }}>
           {hintMessage}
           {/* Arrow pointing to button */}

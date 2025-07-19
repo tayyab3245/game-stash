@@ -1,49 +1,76 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
 
-# Expo
-.expo/
+# Production builds
+build/
 dist/
-web-build/
-expo-env.d.ts
 
-# Native
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# debug
+# Development
+.env*.local
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
+# TypeScript
 *.tsbuildinfo
 
-# Ignore contents of emulators/ and roms/ but not the folders themselves
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.tmp
+*.temp
+
+# Logs
+logs
+*.log
+
+# Electron
+.electron-gyp/
+.electron/
+
+# Game data (keep structure but ignore content)
+# Emulators - keep folder structure but ignore binaries
 emulators/*
 !emulators/.gitkeep
+!emulators/README.md
+
+# ROMs - keep folder structure but ignore game files
 roms/*
 !roms/.gitkeep
-/backend/covers
+!roms/README.md
+
+# Database and user data
 backend/games.db
-/backend
-.vscode/tasks.json
-frontend/build/static/media/pan-sound-alt.669928e0b753f240336f.mp3
-/frontend/build
-/frontend/src/assets/cover-art
+backend/games.db-*
+backend/covers/*
+!backend/covers/.gitkeep
+
+# Build artifacts and certificates (if any)
+build-resources/*.ico
+build-resources/*.icns
+build-resources/*.png
+!build-resources/README.md
+
+# Package files
+*.tgz
+*.tar.gz
+
+# Legacy directories (if they still exist)
+frontend/build/
+frontend/node_modules/
+backend/node_modules/

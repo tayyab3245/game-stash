@@ -1,0 +1,6 @@
+# This file keeps the roms directory structure in git
+# ROM files should be added locally but not committed to the repository
+#
+# Supported platforms:
+# - 3ds/ (Nintendo 3DS ROMs)
+# - Add other platform directories as needed

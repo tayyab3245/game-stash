@@ -1,0 +1,164 @@
+{
+  "name": "game-library",
+  "version": "1.0.0",
+  "description": "A 3D game library built with Electron, React, and SQLite for managing and launching your games",
+  "main": "src/electron/electron.js",
+  "homepage": "./",
+  "private": true,
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "electron": "cross-env ELECTRON_DISABLE_SECURITY_WARNINGS=1 electron src/electron/electron.js",
+    "electron-dev": "concurrently \"npm run start\" \"wait-on http://localhost:3000 && cross-env ELECTRON_DISABLE_SECURITY_WARNINGS=1 electron src/electron/electron.js\"",
+    "dev": "npm run electron-dev",
+    "electron-pack": "npm run build && electron-builder build --publish=never",
+    "electron-pack-win": "npm run build && electron-builder build --win --publish=never",
+    "electron-pack-mac": "npm run build && electron-builder build --mac --publish=never",
+    "electron-pack-linux": "npm run build && electron-builder build --linux --publish=never",
+    "dist": "npm run build && electron-builder",
+    "postinstall": "electron-builder install-app-deps",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "howler": "^2.2.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "^5.0.1",
+    "sqlite3": "^5.1.7",
+    "three": "^0.166.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
+    "@types/howler": "^2.2.12",
+    "@types/react": "^19.1.8",
+    "@types/react-beautiful-dnd": "^13.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/three": "^0.176.0",
+    "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
+    "electron": "^29.0.0",
+    "electron-builder": "^26.0.12",
+    "nodemon": "^3.1.9",
+    "react-beautiful-dnd": "^13.1.1",
+    "wait-on": "^7.0.1"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "build": {
+    "appId": "com.gameLibrary.app",
+    "productName": "Game Library",
+    "directories": {
+      "buildResources": "build-resources",
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "src/electron/**/*",
+      "backend/games.db",
+      "backend/covers/**/*",
+      "emulators/**/*",
+      "roms/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "emulators",
+        "to": "emulators",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "roms",
+        "to": "roms",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
+    "electronRebuild": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build-resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build-resources/icon.icns",
+      "category": "public.app-category.games"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build-resources/icon.png",
+      "category": "Game"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "tayyab3245",
+      "repo": "game-library"
+    }
+  }
+}

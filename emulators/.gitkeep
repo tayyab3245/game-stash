@@ -1,0 +1,6 @@
+# This file keeps the emulators directory structure in git
+# Emulator binaries should be added locally but not committed to the repository
+# 
+# Supported emulators:
+# - citra/ (Nintendo 3DS)
+# - Add other emulator directories as needed

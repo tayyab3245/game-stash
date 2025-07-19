@@ -8,6 +8,21 @@ Built with **React**, **Three.js**, and **Electron**, it features a 3D interacti
 This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.  
 You may share the work with attribution, but **modification or commercial use is not permitted**.
 
+## 🚀 Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Start development mode (runs backend, frontend, and electron)
+npm run dev
+
+# Or run individual components:
+npm run start:backend    # Start Express API server
+npm run start:frontend   # Start React development server
+npm run electron         # Start Electron app (after frontend is running)
+```
+
 <div align="center">
 
 ![Light Theme Single Row](frontend/src/assets/screenshots/light-theme-single-row.png)

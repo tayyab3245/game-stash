@@ -15,7 +15,7 @@ const is3DS  = f => ['.3ds', '.cia'].some(ext => f.toLowerCase().endsWith(ext));
 
 // Initialize database
 const dbPath = path.join(ROOT, 'backend', 'games.db');
-const gameDB = new GameDatabase(dbPath);
+const gameDB = new GameDatabase(ROOT);
 
 // Utility to check file existence
 const fileExists = p => fs.existsSync(p) && fs.statSync(p).isFile();
@@ -33,12 +33,16 @@ const findEmu = platform => {
 };
 
 function createWindow () {
+  const preloadPath = path.resolve(__dirname, 'preload.js');
+  
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
     webPreferences: {
+      nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      enableRemoteModule: false,
+      preload: preloadPath
     },
   });
 
@@ -80,6 +84,14 @@ ipcMain.handle('db:replaceCollection', async (event, newGames) => {
 
 ipcMain.handle('db:deleteAllGames', async () => {
   return await gameDB.deleteAllGames();
+});
+
+// Convert image URL to file path
+ipcMain.handle('fs:getImageUrl', (event, imageUrl) => {
+  if (!imageUrl) return null;
+  // Convert "/covers/filename.jpg" to full file path
+  const fullPath = path.join(ROOT, 'backend', imageUrl);
+  return `file://${fullPath.replace(/\\/g, '/')}`;
 });
 
 // File system operations

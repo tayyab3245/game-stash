@@ -67,7 +67,7 @@
       "build/**/*",
       "src/electron/**/*",
       "backend/games.db",
-      "backend/covers/**/*",
+      "public/**/*",
       "emulators/**/*",
       "roms/**/*",
       "node_modules/**/*",

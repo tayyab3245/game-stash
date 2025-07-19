@@ -5,12 +5,17 @@ const path = require('path');
 const fs = require('fs');
 
 class GameDatabase {
-  constructor(dbPath) {
-    this.dbPath = dbPath;
+  constructor(projectRoot) {
+    this.projectRoot = projectRoot;
+    this.dbPath = path.join(projectRoot, 'backend', 'games.db');
+    this.coversDir = path.join(projectRoot, 'public', 'covers');
     this.db = null;
-    this.coversDir = path.join(path.dirname(dbPath), 'covers');
     
-    // Ensure covers directory exists
+    // Ensure backend and covers directories exist
+    const backendDir = path.join(projectRoot, 'backend');
+    if (!fs.existsSync(backendDir)) {
+      fs.mkdirSync(backendDir, { recursive: true });
+    }
     if (!fs.existsSync(this.coversDir)) {
       fs.mkdirSync(this.coversDir, { recursive: true });
     }
@@ -179,7 +184,7 @@ class GameDatabase {
         // Delete old cover if it exists
         const [game] = await this.queryAll('SELECT imageUrl FROM games WHERE id = ?', [id]);
         if (game && game.imageUrl) {
-          const oldPath = path.join(path.dirname(this.dbPath), game.imageUrl);
+          const oldPath = path.join(this.projectRoot, 'backend', game.imageUrl);
           if (fs.existsSync(oldPath)) {
             fs.unlinkSync(oldPath);
           }
@@ -223,7 +228,7 @@ class GameDatabase {
       
       // Delete the cover image file if it exists
       if (game && game.imageUrl) {
-        const filePath = path.join(path.dirname(this.dbPath), game.imageUrl);
+        const filePath = path.join(this.projectRoot, 'backend', game.imageUrl);
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
         }
@@ -250,7 +255,7 @@ class GameDatabase {
       const rows = await this.queryAll('SELECT imageUrl FROM games');
       rows.forEach(row => {
         if (row.imageUrl) {
-          const filePath = path.join(path.dirname(this.dbPath), row.imageUrl);
+          const filePath = path.join(this.projectRoot, 'backend', row.imageUrl);
           if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
           }
@@ -295,7 +300,7 @@ class GameDatabase {
       const rows = await this.queryAll('SELECT imageUrl FROM games');
       rows.forEach(row => {
         if (row.imageUrl) {
-          const filePath = path.join(path.dirname(this.dbPath), row.imageUrl);
+          const filePath = path.join(this.projectRoot, 'backend', row.imageUrl);
           if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
           }

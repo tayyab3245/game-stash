@@ -23,7 +23,7 @@ type VolumeLevel = 0 | 1 | 2 | 3;
 
 // Main content component that uses theme context
 function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark") => void }) {
-  const { games, loadGames, API } = useGames();
+  const { games, loadGames } = useGames();
   const { theme } = useTheme();
 
   /* wipe default browser margin that caused a white border */
@@ -100,31 +100,32 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
     try {
       setUpdating(true);
       
-      const payload = new FormData();
-      payload.append("platform", "3DS");
-      payload.append("title", formData.title);
-      payload.append("romPath", formData.romPath);
-      payload.append("emuPath", formData.emuPath);
+      // Convert file to buffer if provided
+      let coverBuffer = undefined;
       if (formData.coverFile) {
-        payload.append("cover", formData.coverFile);
+        coverBuffer = await formData.coverFile.arrayBuffer();
       }
 
-      let res: Response;
+      const gameData = {
+        platform: "3DS" as const,
+        title: formData.title,
+        romPath: formData.romPath,
+        emuPath: formData.emuPath,
+      };
+
+      let result;
       if (modalMode === "add") {
-        res = await fetch(`${API}/api`, { method: "POST", body: payload });
+        result = await (window as any).gameAPI.addGame(gameData, coverBuffer);
       } else {
         if (selIdx === null) throw new Error("No game selected to edit");
         const id = games[selIdx].id;
-        res = await fetch(`${API}/api/${id}`, {
-          method: "PUT",
-          body: payload,
-        });
+        result = await (window as any).gameAPI.updateGame(id, gameData, coverBuffer);
       }
 
-      if (!res.ok) {
-        const errInfo = await res.json();
-        throw new Error(errInfo.error || "Failed to save");
+      if (!result.success) {
+        throw new Error(result.error || "Failed to save");
       }
+      
       setModalOpen(false);
       await loadGames();
       setFlashOk(true);
@@ -199,7 +200,7 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
     title: selectedGame.title,
     romPath: selectedGame.romPath,
     emuPath: selectedGame.emuPath,
-    coverUrl: `${API}${selectedGame.imageUrl}`,
+    coverUrl: selectedGame.imageUrl || "",
   } : {};
 
   return (
@@ -251,7 +252,7 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
       {/* Game shelf */}
       <div style={{ height: SHELF_H }}>
         <GameShelf
-          textures={[...games.map((g: Game) => `${API}${g.imageUrl}`), ADD_MARKER]}
+          textures={[...games.map((g: Game) => g.imageUrl).filter((url): url is string => Boolean(url)), ADD_MARKER]}
           width="100%"
           height="100%"
           rows={rowMode}
@@ -320,16 +321,21 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
             }}
             onDelete={
               modalMode === "edit" && selectedGame
-                ? () => {
+                ? async () => {
                     if (selIdx !== null) {
                       SoundManager.playUIBack();
-                      fetch(`${API}/api/${selectedGame.id}`, { method: "DELETE" })
-                        .then(() => {
+                      try {
+                        const result = await (window as any).gameAPI.deleteGame(selectedGame.id);
+                        if (result.success) {
                           loadGames();
                           setModalOpen(false);
                           setSelIdx(null);
-                        })
-                        .catch((e) => window.alert(`Error: ${e.message}`));
+                        } else {
+                          throw new Error(result.error || "Failed to delete game");
+                        }
+                      } catch (e: any) {
+                        window.alert(`Error: ${e.message}`);
+                      }
                     }
                   }
                 : undefined

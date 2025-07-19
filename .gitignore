@@ -74,3 +74,4 @@ build-resources/*.png
 frontend/build/
 frontend/node_modules/
 backend/node_modules/
+/public/covers

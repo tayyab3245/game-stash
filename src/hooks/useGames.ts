@@ -1,7 +1,6 @@
 // src/hooks/useGames.ts
 
 import { useState, useCallback } from 'react';
-const API = 'http://localhost:3001';
 
 export type Platform =  '3DS';
 
@@ -19,20 +18,21 @@ export interface Game {
 export default function useGames() {
   const [games, setGames] = useState<Game[]>([]);
 
-  const loadGames = useCallback(() => {
-    fetch(`${API}/api`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`Failed to fetch games (${r.status})`);
-        return r.json();
-      })
-      .then((data: Game[]) => {
-        setGames(data);
-      })
-      .catch((err: Error) => {
-        console.error(err);
-        window.alert(`Error loading games: ${err.message}`);
-      });
+  const loadGames = useCallback(async () => {
+    try {
+      // Use the new Electron gameAPI
+      const result = await (window as any).gameAPI.getAllGames();
+      
+      if (result.success && result.data) {
+        setGames(result.data);
+      } else {
+        throw new Error(result.error || 'Failed to load games');
+      }
+    } catch (err: any) {
+      console.error('Error loading games:', err);
+      window.alert(`Error loading games: ${err.message}`);
+    }
   }, []);
 
-  return { games, setGames, loadGames, API };
+  return { games, setGames, loadGames };
 }

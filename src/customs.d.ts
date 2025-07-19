@@ -10,6 +10,7 @@ interface LauncherAPI {
   autoDetect: (title: string, platform: string) => Promise<{ romPath: string | null; emuPath: string | null }>;
   exists: (absPath: string) => Promise<boolean>;
   play: (emuPath: string, romPath: string) => Promise<{ ok: boolean; error?: string }>;
+  getImageUrl: (imageUrl: string) => Promise<string | null>;
 }
 
 interface GameData {

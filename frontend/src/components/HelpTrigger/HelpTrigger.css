@@ -5,8 +5,8 @@
   bottom: 60px; /* Default position, can be overridden with inline style */
   z-index: 1000;
   
-  width: 56px; /* Increased size */
-  height: 56px; /* Increased size */
+  width: 72px; /* Increased from 56px for better visibility */
+  height: 72px; /* Increased from 56px for better visibility */
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -38,22 +38,27 @@
   animation: helpTriggerBreathe 3s ease-in-out infinite;
 }
 
-/* Always use blue color for SVG icon for consistency */
 .help-trigger svg {
-  color: #2d7bff; /* Always blue, regardless of active state */
+  width: 28px; /* Increased from 24px to match larger button */
+  height: 28px; /* Increased from 24px to match larger button */
+  color: inherit; /* Use theme color by default */
+  transition: color 0.3s ease;
 }
 
-.help-trigger svg {
-  width: 24px; /* Increased from 20px */
-  height: 24px; /* Increased from 20px */
-  color: #2d7bff; /* Always blue for consistency */
-  transition: color 0.3s ease;
+/* Blue color only when hints are active/enabled */
+.help-trigger--active svg {
+  color: #5fa3ff; /* Light blue when active */
+}
+
+/* Hover effect - slightly lighter version of current color */
+.help-trigger:hover svg {
+  filter: brightness(1.2);
 }
 
 /* Light theme styling */
 [data-theme="light"] .help-trigger {
   background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 95%);
-  color: #495057;
+  color: #212529; /* Darker color for better contrast in light theme */
   border: 1px solid rgba(0, 0, 0, 0.08); /* Subtle rim */
   box-shadow: 
     inset 0 2px 3px rgba(255, 255, 255, 0.8),
@@ -131,5 +136,28 @@
   100% {
     opacity: 0;
     transform: translateX(-5px) scale(0.9);
+  }
+}
+
+/* Help message animation */
+@keyframes helpMessageFadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.9);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(0) scale(1.02);
+  }
+  25% {
+    transform: translateX(0) scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.95);
   }
 }

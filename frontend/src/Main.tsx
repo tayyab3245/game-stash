@@ -63,10 +63,6 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
   /* ── Handle command bar animation when game selection changes ── */
   useEffect(() => {
     if (selIdx !== null && !modalOpen) {
-      // Hide command bar immediately when game changes
-      setCommandBarVisible(false);
-      setGameTransitioning(true);
-      
       // Show command bar after a delay (allowing game to center)
       const timer = setTimeout(() => {
         setCommandBarVisible(true);
@@ -179,7 +175,7 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
   // Function to manually trigger/toggle hints
   const triggerHints = () => {
     console.log('Toggling hints manually from Main');
-    if (selIdx !== null && rowMode === 1) {
+    if (selIdx !== null) { // Removed rowMode === 1 restriction to work in both grid modes
       if (showHints || forceShowHints) {
         // If hints are showing, turn them off
         setShowHints(false);
@@ -231,12 +227,7 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
               setCommandBarVisible(false);
               setGameTransitioning(true);
               setRowMode(newRowMode as 1 | 2);
-              
-              // Show command bar after transition
-              setTimeout(() => {
-                setCommandBarVisible(true);
-                setGameTransitioning(false);
-              }, 600);
+              // Let the useEffect handle showing the command bar after delay
             }}
           />
         ))}
@@ -347,50 +338,15 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
         </div>
       )}
       
-      {/* Help Trigger Button - always visible when a game is selected in single row mode */}
+      {/* Help Trigger Button - visible when a game is selected in any grid mode */}
       <HelpTrigger
-        visible={rowMode === 1 && selIdx !== null && !modalOpen}
+        visible={selIdx !== null && !modalOpen}
         hintsActive={showHints || forceShowHints}
-        yOffset={690} // Adjust this value to move the button up/down
+        yOffset={690}
+        message={hintMessage}
+        theme={theme.mode}
         onClick={triggerHints}
       />
-      
-      {/* Hint Status Message - positioned next to help button in top right */}
-      {hintMessage && (
-        <div style={{
-          position: 'fixed',
-          top: 'calc(100vh - 690px - 45px)', // Moved up by 12px (was -28px, now -40px)
-          right: '105px', // Added more spacing from button (was 85px, now 105px)
-          background: theme.mode === 'light' ? 'rgba(20, 20, 20, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-          color: theme.mode === 'light' ? '#ffffff' : '#141414',
-          padding: '8px 12px',
-          borderRadius: '6px',
-          fontSize: '14px',
-          fontWeight: '500',
-          backdropFilter: 'blur(8px)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-          zIndex: 1001,
-          whiteSpace: 'nowrap',
-          animation: 'helpMessageFadeInOut 2s ease-in-out forwards',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}>
-          {hintMessage}
-          {/* Arrow pointing to button */}
-          <div style={{
-            width: 0,
-            height: 0,
-            borderLeft: '6px solid ' + (theme.mode === 'light' ? 'rgba(20, 20, 20, 0.9)' : 'rgba(255, 255, 255, 0.9)'),
-            borderTop: '6px solid transparent',
-            borderBottom: '6px solid transparent',
-            position: 'absolute',
-            right: '-6px',
-            top: '50%',
-            transform: 'translateY(-50%)'
-          }} />
-        </div>
-      )}
     </div>
   );
 }

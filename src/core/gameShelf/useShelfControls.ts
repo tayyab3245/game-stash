@@ -208,18 +208,30 @@ export default function useShelfControls(opts: ShelfControlParams) {
       }
 
       if (hit) {
-        opts.selectMesh(hit, true, null); // No direction for mouse clicks
+        // Only call selectMesh if it's a different game (avoid false positive on rotation)
+        if (hit !== opts.selectedRef.current) {
+          opts.selectMesh(hit, true, null); // New game selected
+        }
         mode = 'rotate';
 
         longTid = window.setTimeout(() => {
           longTid = null;
           if (!moved && hit) opts.onLongPress?.(opts.meshes.current.indexOf(hit));
         }, 700);
-      } else if (opts.rows !== 1 || !opts.selectedRef.current) {
-        clearSelect();
-        mode = 'pan';
       } else {
-        mode = opts.selectedRef.current ? 'rotate' : 'pan';
+        // Only deselect if we're clicking in the canvas area (not on UI elements)
+        // This prevents the command bar from hiding when clicking UI buttons
+        const clickedInCanvas = (e.target as HTMLElement).closest('canvas');
+        if (clickedInCanvas) {
+          // Clicked in canvas but didn't hit a game - only deselect in certain cases
+          if (opts.rows !== 1 || !opts.selectedRef.current) {
+            clearSelect();
+          }
+          mode = 'pan';
+        } else {
+          // Clicked outside canvas (on UI) - don't change selection, just set mode
+          mode = opts.selectedRef.current ? 'rotate' : 'pan';
+        }
       }
     };
 

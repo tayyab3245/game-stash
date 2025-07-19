@@ -36,6 +36,7 @@ export interface GameShelfProps {
   showHints?: boolean;
   forceShowHints?: boolean;
   onHintsChange?: (show: boolean) => void;
+  onMovementChange?: (isMoving: boolean) => void; // Track when shelf/games are moving
 }
   
 const GameShelf: React.FC<GameShelfProps> = ({
@@ -50,6 +51,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
   showHints = true,
   forceShowHints = false,
   onHintsChange,
+  onMovementChange,
 }) => {
   const themeCtx = useTheme();
 
@@ -88,11 +90,14 @@ const GameShelf: React.FC<GameShelfProps> = ({
   // positive values = move games to the right
   // negative values = move games to the left
   const STARTING_POSITION_OFFSET_1_ROW = -10; // For single row mode
-  const STARTING_POSITION_OFFSET_2_ROW = -15; // For double row mode (separate offset) 
+  const STARTING_POSITION_OFFSET_2_ROW = -20; // For double row mode (separate offset) 
 
   // Track row changes for animation
   const prevRows = useRef<1 | 2>(rows);
   const clock = useRef<THREE.Clock>(new THREE.Clock());
+  
+  // Movement tracking for command bar visibility
+  const commandBarTimer = useRef<number | null>(null);
   
   // State for hover hints
   const [selectedGamePosition, setSelectedGamePosition] = useState<{ x: number; y: number } | undefined>();
@@ -102,6 +107,12 @@ const GameShelf: React.FC<GameShelfProps> = ({
     // Clear hints immediately when navigating
     onHintsChange?.(false);
     setSelectedGamePosition(undefined);
+    
+    // Notify parent immediately that movement state is changing
+    if (commandBarTimer.current) {
+      clearTimeout(commandBarTimer.current);
+    }
+    onMovementChange?.(true); // Hide command bar immediately on selection change
     
     // Clear old selection
     if (selectedRef.current) {
@@ -191,6 +202,11 @@ const GameShelf: React.FC<GameShelfProps> = ({
     
     // Update position for hover hints
     updateSelectedGamePosition();
+    
+    // Show command bar after a short delay (simple and reliable)
+    commandBarTimer.current = window.setTimeout(() => {
+      onMovementChange?.(false); // Show command bar
+    }, 200); // Quick but smooth timing
     
     // Reset hints for new selection (after position is updated)
     setTimeout(() => {
@@ -310,6 +326,14 @@ const GameShelf: React.FC<GameShelfProps> = ({
                 outline.visible = true;
                 console.log('✅ Selected game outline restored and made visible after grid transition');
               }
+              
+              // Show command bar after grid transition completes
+              if (commandBarTimer.current) {
+                clearTimeout(commandBarTimer.current);
+              }
+              commandBarTimer.current = window.setTimeout(() => {
+                onMovementChange?.(false);
+              }, 100); // Quick delay after grid transition
             }
           }
         }
@@ -381,6 +405,9 @@ const GameShelf: React.FC<GameShelfProps> = ({
 
     return () => {
       cleanupControls(); // Clean up pointer and keyboard controls
+      if (commandBarTimer.current) {
+        clearTimeout(commandBarTimer.current);
+      }
       if (renderer.current?.domElement?.parentNode) {
         renderer.current.domElement.parentNode.removeChild(renderer.current.domElement);
       }
@@ -652,6 +679,12 @@ const GameShelf: React.FC<GameShelfProps> = ({
       const currentShelfX = shelf.current.position.x;
       const selectedGame = selectedRef.current;
       const selectedGameIndex = selectedGame ? all.indexOf(selectedGame) : -1;
+      
+      // Hide command bar during grid transition
+      if (commandBarTimer.current) {
+        clearTimeout(commandBarTimer.current);
+      }
+      onMovementChange?.(true);
       
       console.log('🔄 Starting grid morph transition from', prevRows.current, 'to', rows, 'rows');
       console.log('📌 Selected game index during transition:', selectedGameIndex);

@@ -47,6 +47,7 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
   const [hintMessage, setHintMessage] = useState<string | null>(null);
   const [commandBarVisible, setCommandBarVisible] = useState(true);
   const [gameTransitioning, setGameTransitioning] = useState(false);
+  const [isShelfMoving, setIsShelfMoving] = useState(false);
 
   /* ── Environment detection ── */
   const isElectron = !!(window as any).gameAPI && !!(window as any).settingsAPI;
@@ -108,22 +109,19 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
     }
   }, [games.length, selIdx]);
 
-  /* ── Handle command bar animation when game selection changes ── */
+  /* ── Handle command bar visibility based on shelf movement ── */
   useEffect(() => {
-    if (selIdx !== null && !modalOpen) {
-      // Show command bar after a delay (allowing game to center)
-      const timer = setTimeout(() => {
-        setCommandBarVisible(true);
-        setGameTransitioning(false);
-      }, 600); // Adjust timing to match your 3D animation duration
-      
-      return () => clearTimeout(timer);
-    } else {
-      // No game selected or modal is open, hide command bar
-      setCommandBarVisible(false);
-      setGameTransitioning(false);
-    }
-  }, [selIdx, modalOpen]);
+    console.log(`[Main] Command bar logic: selIdx=${selIdx}, modalOpen=${modalOpen}, isShelfMoving=${isShelfMoving}`);
+    
+    // Command bar should be visible when:
+    // 1. A game is selected AND
+    // 2. No modal is open AND  
+    // 3. The shelf is not moving
+    const shouldShowCommandBar = selIdx !== null && !modalOpen && !isShelfMoving;
+    
+    console.log(`[Main] Command bar should be: ${shouldShowCommandBar ? 'VISIBLE' : 'HIDDEN'}`);
+    setCommandBarVisible(shouldShowCommandBar);
+  }, [selIdx, modalOpen, isShelfMoving]);
 
   /* ── time display ── */
   const [now, setNow] = useState(new Date());
@@ -272,11 +270,9 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
             mode={r as 1 | 2}
             filled={rowMode === r}
             onChange={(newRowMode) => {
-              // Hide command bar during row mode transition
-              setCommandBarVisible(false);
-              setGameTransitioning(true);
+              console.log(`[Main] Grid mode changed to: ${newRowMode}`);
               setRowMode(newRowMode as 1 | 2);
-              // Let the useEffect handle showing the command bar after delay
+              // Command bar visibility will be handled by the movement detection
             }}
           />
         ))}
@@ -307,18 +303,20 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
           showHints={showHints}
           forceShowHints={forceShowHints}
           onHintsChange={(show) => setShowHints(show)}
+          onMovementChange={(isMoving) => {
+            console.log(`[Main] Shelf movement changed: ${isMoving ? 'MOVING' : 'STATIONARY'}`);
+            setIsShelfMoving(isMoving);
+          }}
           onSelect={(idx) => {
+            console.log(`[Main] onSelect called: idx=${idx}, current selIdx=${selIdx}`);
             if (idx === -1) {
               // Add button clicked
               setModalMode("add");
               setModalOpen(true);
               setSelIdx(null);
             } else {
-              // Game selected - trigger command bar animation
-              if (idx !== selIdx) {
-                setCommandBarVisible(false);
-                setGameTransitioning(true);
-              }
+              // Game selected
+              console.log(`[Main] Game selected: ${idx}`);
               setSelIdx(idx);
             }
           }}

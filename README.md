@@ -1,16 +1,36 @@
-# Game Library
+# 🎮 Game Stash
 
-A desktop app for organizing and launching Nintendo 3DS games.  
-Built with **React**, **Three.js**, and **Electron**, it features a 3D interactive shelf, auto-detection of ROMs and emulators, and integrated sound effects for a polished feel.
+A powerful desktop application for organizing and launching your Nintendo 3DS game collection.  
+Built with **React**, **Three.js**, and **Electron**, featuring a stunning 3D interactive library, automatic ROM detection, and seamless emulator integration.
+
+## 📥 Download
+
+**Ready to use? Get Game Stash now!**
+
+[![Download Game Stash](https://img.shields.io/badge/Download-Game%20Stash%20v1.0.0-blue?style=for-the-badge&logo=download)](https://github.com/tayyab3245/game-library/releases/latest)
+
+### Installation Options:
+- **🚀 Portable Version** - `Game Stash 1.0.0.exe` (No installation required, just run!)
+- **📦 Full Installer** - `Game Stash Setup 1.0.0.exe` (Traditional installer with uninstaller)
+
+> **Windows 10/11 Required** | **No additional dependencies needed**
 
 ![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)
 
 This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
 You may share the work with attribution, but **modification or commercial use is not permitted**.
 
-## 🚀 Quick Start
+---
+
+## �️ For Developers
+
+Want to contribute or run the development version?
 
 ```bash
+# Clone the repository
+git clone https://github.com/tayyab3245/game-library.git
+cd game-library
+
 # Install dependencies
 npm install
 
@@ -21,6 +41,12 @@ npm run dev
 npm run start:backend    # Start Express API server
 npm run start:frontend   # Start React development server
 npm run electron         # Start Electron app (after frontend is running)
+```
+
+### Build Production Executable:
+```bash
+# Build for Windows
+npx electron-builder build --win --publish=never
 ```
 
 <div align="center">

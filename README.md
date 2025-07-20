@@ -1,30 +1,51 @@
-# 🎮 Game Stash
+# Game Stash
 
-A powerful desktop application for organizing and launching your Nintendo 3DS game collection.  
-Built with **React**, **Three.js**, and **Electron**, featuring a stunning 3D interactive library, automatic ROM detection, and seamless emulator integration.
+A desktop application for organizing and launching your Nintendo 3DS game collection. Built with React, Three.js, and Electron.
 
-## 📥 Download
-
-**Ready to use? Get Game Stash now!**
+## Download
 
 [![Download Game Stash](https://img.shields.io/badge/Download-Game%20Stash%20v1.0.0-blue?style=for-the-badge&logo=download)](https://github.com/tayyab3245/game-library/releases/latest)
 
-### Installation Options:
-- **🚀 Portable Version** - `Game Stash 1.0.0.exe` (No installation required, just run!)
-- **📦 Full Installer** - `Game Stash Setup 1.0.0.exe` (Traditional installer with uninstaller)
+**Installation Options:**
+- **Portable Version** - `Game Stash 1.0.0.exe` (No installation required)
+- **Full Installer** - `Game Stash Setup 1.0.0.exe` (Traditional installer)
 
-> **Windows 10/11 Required** | **No additional dependencies needed**
+**Requirements:** Windows 10/11
 
 ![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)
 
-This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
-You may share the work with attribution, but **modification or commercial use is not permitted**.
+## Features
+
+- Interactive 3D game library with Three.js rendering
+- Automatic ROM and emulator detection
+- Light and dark themes with single/double row layouts
+- One-click game launching through Electron IPC
+- Built-in sound effects and smooth animations
+- Fully local - no internet connection required
+
+## 3D Game Cover Showcase
+
+The app features fully 3D game covers that you can rotate and interact with. Each cover is rendered as a complete 3D mesh with proper depth and lighting.
+
+<div align="center">
+
+![3D Game Demo](src/assets/screenshots/3d-game-demo.gif)
 
 ---
 
-## �️ For Developers
+*Interactive 3D game covers with realistic rotation and depth*
 
-Want to contribute or run the development version?
+</div>
+
+## Screenshots
+
+| Light Theme | Dark Theme |
+|-------------|------------|
+| ![Light Theme](src/assets/screenshots/light-theme-single-row.png) | ![Dark Theme](src/assets/screenshots/dark-theme-single-row.png) |
+
+> ⚠️ Emulators and ROMs are not included. The app only manages your existing local files.
+
+## For Developers
 
 ```bash
 # Clone the repository
@@ -34,282 +55,88 @@ cd game-library
 # Install dependencies
 npm install
 
-# Start development mode (runs backend, frontend, and electron)
+# Start development mode
 npm run dev
-
-# Or run individual components:
-npm run start:backend    # Start Express API server
-npm run start:frontend   # Start React development server
-npm run electron         # Start Electron app (after frontend is running)
 ```
 
 ### Build Production Executable:
 ```bash
-# Build for Windows
 npx electron-builder build --win --publish=never
 ```
 
-<div align="center">
+## Tech Stack
 
-![Light Theme Single Row](frontend/src/assets/screenshots/light-theme-single-row.png)
-*Clean, modern interface with single-row game display*
+- **Frontend:** React + TypeScript + Three.js
+- **Desktop:** Electron with IPC communication
+- **Database:** SQLite for local game storage
+- **Audio:** Custom sound manager with multiple channels
 
-</div>
+## License
 
-## 🎮 3D Game Cover Showcase
+This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License. You may share the work with attribution, but modification or commercial use is not permitted.
 
-The app features fully 3D game covers that you can rotate and interact with. Each cover is rendered as a complete 3D mesh with proper depth and lighting.
-
-<div align="center">
-
-![3D Game Demo](frontend/src/assets/screenshots/3d-game-demo.gif)
 ---
-*Interactive 3D game covers with realistic rotation and depth*
 
-</div>
+## 🛠️ Development Journey
 
-## 📸 Theme Gallery
+**See how this project evolved from concept to production**
 
 <div align="center">
 
-| Light Theme | Dark Theme |
-|-------------|------------|
-| ![Light Theme Double Row](frontend/src/assets/screenshots/light-theme-double-row.png) | ![Dark Theme Single Row](frontend/src/assets/screenshots/dark-theme-single-row.png) |
-| *Light theme with double-row layout* | *Dark theme with single-row layout* |
-| ![Light Theme Single Row](frontend/src/assets/screenshots/light-theme-single-row.png) | ![Dark Theme Double Row](frontend/src/assets/screenshots/dark-theme-double-row.png) |
-| *Light theme with single-row layout* | *Dark theme with double-row layout* |
+[![View Development Timeline](https://img.shields.io/badge/View-Development%20Timeline-green?style=for-the-badge&logo=timeline)](src/assets/screenshots/my-progress/progress-log.md)
+
+### **1. 3D Breakthrough** → **2. Full-Stack Integration** → **3. Production Polish**
 
 </div>
 
->  Emulators and ROMs are not included. The app only supports local files.
-
----
-
-##  Features
-
--  Interactive 3D shelf to display game covers
--  Hover & click selection with sound feedback
--  Auto-detects emulator and ROM paths
--  One-click "Launch" button using Electron IPC
--  Built-in UI sound effects for select, back, and rotation
--  Fully local — no tracking, no internet required
-
----
-
-##  Tech Stack
-
-- **Frontend:** React + TypeScript + Three.js  
-- **Desktop Wrapper:** Electron (IPC, preload isolation)  
-- **Audio:** Custom sound manager with multiple effect channels  
-- **Database:** SQLite (Node server, via `server.js`)  
-
----
-
-##  Development Journey
-
-*A quick overview of the major milestones that shaped this project*
-
-<div align="center">
-
-### **1. First 3D Breakthrough** → **2. Full-Stack Integration** → **3. Nintendo 3DS Vision** → **4. Advanced Polish** → **5. Production Ready**
-
-</div>
-
----
-
-###  **Milestone 1: Learning 3D Fundamentals**
+### **Milestone 1: Learning 3D Fundamentals**
 *From flat textures to real 3D meshes*
 
 <div align="center">
 
 | Early 3D Experiments | First Real 3D Achievement |
 |---------------------|---------------------------|
-| ![First 3D Attempt](frontend/src/assets/screenshots/my-progress/first-3d-cover-attempt1.png) | ![Five Game Covers](frontend/src/assets/screenshots/my-progress/initial-version-with-3d-mesh-render.png) |
+| ![First 3D Attempt](src/assets/screenshots/my-progress/first-3d-cover-attempt1.png) | ![Five Game Covers](src/assets/screenshots/my-progress/initial-version-with-3d-mesh-render.png) |
 | *Learning Three.js fundamentals* | *First stable 5-game prototype* |
 
 </div>
 
 **Key Achievement:** Mastered Three.js camera systems, texture mapping, and scene graph hierarchy. Progressed from pseudo-3D effects to authentic 3D rendering with proper mesh geometry.
 
----
-
-###  **Milestone 2: Full-Stack Architecture**
+### **Milestone 2: Full-Stack Architecture**
 *Building complete backend integration*
 
 <div align="center">
 
-| Backend Development | Academic Submission |
+| Nintendo 3DS Transformation | Advanced UI Systems |
 |-------------------|-------------------|
-| ![Backend Working](frontend/src/assets/screenshots/my-progress/early-prototype-for-edit-delete-logic.png) | ![Second Version](frontend/src/assets/screenshots/my-progress/my-second-working-version.png) |
-| *First working backend with CRUD* | *Complete full-stack system for school* |
+| ![3DS Approach](src/assets/screenshots/my-progress/changed-approach-to-3ds.png) | ![Grid Layouts](src/assets/screenshots/my-progress/3-grid-layouts.png) |
+| *Nintendo 3DS design pivot* | *Multi-configuration layouts* |
 
 </div>
 
-**Key Achievement:** Implemented Express.js server, SQLite database, RESTful APIs, and real-time UI updates. Achieved stable CRUD functionality with comprehensive error handling.
+**Key Achievement:** Implemented Express.js server, SQLite database, and developed complex texture atlas segmentation for authentic 3DS game cases. Mastered UV coordinate calculations and professional-grade 3D asset pipeline.
 
----
-
-###  **Milestone 3: Nintendo 3DS Transformation**
-*Authentic game case rendering with advanced texturing*
+### **Milestone 3: Production-Ready Polish**
+*Complete modular system with professional architecture*
 
 <div align="center">
 
-| 3DS Inspiration | Complex UV Mapping | Perfect Result |
-|----------------|-------------------|----------------|
-| ![3DS Approach](frontend/src/assets/screenshots/my-progress/changed-approach-to-3ds.png) | ![UV Debug](frontend/src/assets/screenshots/my-progress/3ds-spline-debug1.png) | ![Perfect Mapping](frontend/src/assets/screenshots/my-progress/first-good-mapped-3ds-mesh.png) |
-| *Nintendo 3DS design pivot* | *Complex texture segmentation* | *Production-quality 3D assets* |
-
-</div>
-
-**Key Achievement:** Developed complex texture atlas segmentation for authentic 3DS game cases. Mastered UV coordinate calculations, texture bleeding prevention, and professional-grade 3D asset pipeline.
-
----
-
-###  **Milestone 4: Advanced UI & Animation Systems**
-*Nintendo-inspired design with sophisticated interactions*
-
-<div align="center">
-
-| Grid Layout Systems | Animated Components | Theme Architecture |
-|-------------------|-------------------|-------------------|
-| ![Grid Layouts](frontend/src/assets/screenshots/my-progress/3-grid-layouts.png) | ![SVG Animations](frontend/src/assets/screenshots/my-progress/grid-icon-version2.png) | ![Light Theme](frontend/src/assets/screenshots/my-progress/first-light-theme.png) |
-| *Multi-configuration layouts* | *Physics-based animations* | *Dual-theme system* |
-
-</div>
-
-**Key Achievement:** Engineered sophisticated SVG animation systems replicating Nintendo's design patterns. Implemented physics-based bounce calculations, spring animations, and comprehensive theme architecture.
-
----
-
-###  **Milestone 5: Production-Ready Architecture**
-*Complete modular system with professional polish*
-
-<div align="center">
-
-| **Early Stable Themes** | **Final Production Themes** |
+| **Early Stable Version** | **Final Production** |
 |-------------------------|----------------------------|
-| ![Early Light](frontend/src/assets/screenshots/my-progress/stable-light-version.png) | ![Final Light](frontend/src/assets/screenshots/my-progress/final-light.png) |
-| *Early light theme with basic theming* | *Final light theme with unified design tokens* |
-| ![Early Dark](frontend/src/assets/screenshots/my-progress/stable-dark-verson.png) | ![Final Dark](frontend/src/assets/screenshots/my-progress/final-dark.png) |
-| *Early dark theme with component-level styling* | *Final dark theme with centralized management* |
+| ![Early Light](src/assets/screenshots/my-progress/stable-light-version.png) | ![Final Light](src/assets/screenshots/my-progress/final-light.png) |
+| *Early prototype with basic functionality* | *Final production-ready system* |
 
 </div>
 
-**Key Achievement:** Complete architectural refactoring with modular components, centralized theme management, and unified design tokens. Transformed from component-level hardcoded styling to professional-grade visual consistency and maintainable, scalable code architecture.
+**Key Achievement:** Complete architectural refactoring with modular components, centralized theme management, and unified design tokens. Transformed from prototype to professional-grade, maintainable system.
 
 ---
 
-##  Detailed Development Timeline
+<div align="center">
 
-<details>
-<summary><strong> Click to explore the complete development timeline</strong></summary>
+[![View Complete Development Timeline](https://img.shields.io/badge/View%20Complete-Development%20Timeline-orange?style=for-the-badge&logo=timeline&logoColor=white)](src/assets/screenshots/my-progress/progress-log.md)
 
-> **Want to see how this project evolved from concept to production?**  
-> This comprehensive timeline showcases every major milestone, technical challenge, and breakthrough moment in the development process.
+</div>
 
-###  **What You'll Discover:**
-- **18 Major Development Phases** - From first 3D experiments to production-ready architecture
-- **Technical Deep Dives** - Understanding Three.js, React, full-stack integration, and advanced graphics programming
-- **Problem-Solving Journey** - Real challenges, setbacks, and breakthrough moments
-- **Before & After Comparisons** - Visual progression showing each major improvement
-- **Architecture Evolution** - How the codebase transformed from prototype to maintainable system
-
-###  **Read the Full Journey:**
-**[Complete Development Timeline →](frontend/src/assets/screenshots/my-progress/progress-log.md)**
-
-*This document contains detailed technical explanations, screenshots from every development phase, and insights into the learning process behind building a complex 3D application.*
-
----
-
-**Key Highlights from the Journey:**
--  **Learning 3D Graphics** - Mastering Three.js, WebGL, and advanced rendering techniques
--  **Full-Stack Architecture** - Building Express.js backend with SQLite and real-time updates  
--  **UI/UX Evolution** - Developing Nintendo-inspired design system with dual themes
--  **Performance Optimization** - Implementing object pooling, memory management, and GPU optimization
--  **Complex Problem Solving** - Tackling UV mapping, texture segmentation, and spatial algorithms
-
-</details>
-
----
-
-##  File Structure
-
-```
-frontend/       → React UI (3D shelf, overlays)
-emulators/      → [IGNORED] Place your emulator executables here (e.g. Citra for 3DS)
-roms/           → [IGNORED] Place your game ROMs here
-src/assets/cover-art/  →  [IGNORED] Place your game cover images
-```
-
-> ** Folder Setup Required**  
-> To ensure the app functions correctly, you must manually create the following directories:
->
-> ```
-> emulators/citra/      # Place your emulator executable here (e.g. citra-qt.exe)
-> roms/3ds/             # Place your game ROMs here (e.g. GameTitle.3ds)
-> ```
->
-> **Expected Example Paths:**
->
-> ```
-> emulators/citra/citra-qt.exe
-> roms/3ds/GameTitle.3ds
-> ```
-
----
-
-##  Getting Started
-> ⚠️ This project is a personal launcher and does **not** include game files or emulators. You must supply your own.
-
-###  Install dependencies
-
-```
-git clone https://github.com/tayyab3245/game-library.git
-cd game-library/frontend
-npm install
-```
-###  Start the frontend in dev mode
-
-```
-npm run electron-dev
-```
-###  (Optional) Build the frontend
-
-```
-npm run build
-```
-###  Start backend (for cover uploads & DB)
-   
-```
-cd ../backend
-npm install
-npx nodemon server.js
-```
-
-### Customizing
-
-- **Supported platforms:** Nintendo 3DS (`.3ds`, `.cia`)  
-  Switch support is possible with appropriate emulator setup
-- **Adding games:** Use the “Add New Game” button to upload a cover and set ROM/emulator paths
-- **Audio files:** Located in `src/assets/audio`
-- **Cover art:** Stored in `frontend/assets/cover-art`
-
-### Demo Cover Art
-
-Looking for more box art?  
-You can find high-quality game covers here:  
->[The Cover Project – Nintendo 3DS (P)](https://www.thecoverproject.net/view.php?cat_id=54&view=p)
-
----
-
----
-## ⚖️ License & Disclaimer
-
-![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)
-
-This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
-You may share the work with attribution, but **modification or commercial use is not permitted**.
-
-**Please Note:** This software is provided for educational and archival purposes only. It does not include any copyrighted games, assets, or commercial emulators.
-- Users are responsible for sourcing their own legally-owned game ROMs and associated assets.
-
+*Want to see the full journey? The complete timeline contains 18 major development phases with detailed technical explanations, problem-solving approaches, and insights into building a complex 3D application.*

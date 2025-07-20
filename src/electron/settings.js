@@ -2,11 +2,13 @@
 
 const fs = require('fs');
 const path = require('path');
+const { app } = require('electron');
 
 class SettingsManager {
-  constructor(projectRoot) {
-    this.projectRoot = projectRoot;
-    this.settingsPath = path.join(projectRoot, 'backend', 'settings.json');
+  constructor() {
+    // Use user data directory instead of installation directory
+    const userDataPath = app.getPath('userData');
+    this.settingsPath = path.join(userDataPath, 'settings.json');
     this.settings = this.loadSettings();
   }
 
@@ -14,7 +16,7 @@ class SettingsManager {
     return {
       folderPaths: {
         emulator: '',
-        roms: path.join(this.projectRoot, 'roms'),
+        roms: '',
         coverArt: ''
       },
       app: {

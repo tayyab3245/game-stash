@@ -1,15 +1,15 @@
 {
-  "name": "game-library",
+  "name": "game-stash",
   "version": "1.0.0",
   "description": "A 3D game library built with Electron, React, and SQLite for managing and launching your games",
-  "main": "src/electron/electron.js",
+  "main": "build/electron.js",
   "homepage": "./",
   "private": true,
   "author": "",
   "license": "ISC",
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && xcopy /Y src\\electron\\*.js build\\",
     "electron": "cross-env ELECTRON_DISABLE_SECURITY_WARNINGS=1 electron src/electron/electron.js",
     "electron-dev": "concurrently \"npm run start\" \"wait-on http://localhost:3000 && cross-env ELECTRON_DISABLE_SECURITY_WARNINGS=1 electron src/electron/electron.js\"",
     "dev": "npm run electron-dev",
@@ -57,8 +57,8 @@
     ]
   },
   "build": {
-    "appId": "com.gameLibrary.app",
-    "productName": "Game Library",
+    "appId": "com.gameStash.app",
+    "productName": "Game Stash",
     "directories": {
       "buildResources": "build-resources",
       "output": "dist"

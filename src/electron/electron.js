@@ -16,10 +16,9 @@ const EMUS   = path.join(ROOT, 'emulators');
 const ROMS   = path.join(ROOT, 'roms');
 const is3DS  = f => ['.3ds', '.cia'].some(ext => f.toLowerCase().endsWith(ext));
 
-// Initialize database and settings
-const dbPath = path.join(ROOT, 'backend', 'games.db');
-const gameDB = new GameDatabase(ROOT);
-const settingsManager = new SettingsManager(ROOT);
+// Initialize database and settings - using user data directory
+const gameDB = new GameDatabase();
+const settingsManager = new SettingsManager();
 
 // Create simple HTTP server for serving cover images
 const COVERS_PORT = 3001;
@@ -29,7 +28,7 @@ const coversServer = http.createServer((req, res) => {
   // Only serve files from /covers path
   if (parsedUrl.pathname.startsWith('/covers/')) {
     const filename = path.basename(parsedUrl.pathname);
-    const filePath = path.join(ROOT, 'public', 'covers', filename);
+    const filePath = path.join(gameDB.coversDir, filename);
     
     // Check if file exists
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
@@ -95,7 +94,16 @@ function createWindow () {
 
   // Development (localhost:3000) vs. production (load built index.html)
   const devURL  = 'http://localhost:3000';
-  const prodURL = `file://${path.join(ROOT, 'build', 'index.html')}`;
+  
+  // For packaged apps, use the correct path within the app bundle
+  let prodURL;
+  if (app.isPackaged) {
+    // In packaged app, index.html is in the same directory as electron.js
+    prodURL = `file://${path.join(__dirname, 'index.html')}`;
+  } else {
+    // In development, files are in the build directory
+    prodURL = `file://${path.join(__dirname, '..', '..', 'build', 'index.html')}`;
+  }
 
   // If packaged, load the built React files; otherwise load create-react-app dev server
   const target = app.isPackaged ? prodURL : devURL;

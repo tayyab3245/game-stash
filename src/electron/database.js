@@ -3,18 +3,19 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
+const { app } = require('electron');
 
 class GameDatabase {
-  constructor(projectRoot) {
-    this.projectRoot = projectRoot;
-    this.dbPath = path.join(projectRoot, 'backend', 'games.db');
-    this.coversDir = path.join(projectRoot, 'public', 'covers');
+  constructor() {
+    // Use user data directory instead of installation directory
+    const userDataPath = app.getPath('userData');
+    this.dbPath = path.join(userDataPath, 'games.db');
+    this.coversDir = path.join(userDataPath, 'covers');
     this.db = null;
     
-    // Ensure backend and covers directories exist
-    const backendDir = path.join(projectRoot, 'backend');
-    if (!fs.existsSync(backendDir)) {
-      fs.mkdirSync(backendDir, { recursive: true });
+    // Ensure user data and covers directories exist
+    if (!fs.existsSync(userDataPath)) {
+      fs.mkdirSync(userDataPath, { recursive: true });
     }
     if (!fs.existsSync(this.coversDir)) {
       fs.mkdirSync(this.coversDir, { recursive: true });

@@ -1,4 +1,4 @@
-# Game Library Development Journey
+# Game Stash Development Journey
 *A comprehensive timeline showcasing the evolution from concept to production*
 
 ---

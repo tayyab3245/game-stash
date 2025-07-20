@@ -63,42 +63,20 @@
       "buildResources": "build-resources",
       "output": "dist"
     },
+    "asar": true,
+    "asarUnpack": [
+    ],
     "files": [
       "build/**/*",
       "src/electron/**/*",
-      "backend/games.db",
       "public/**/*",
-      "emulators/**/*",
-      "roms/**/*",
       "node_modules/**/*",
       "package.json"
     ],
     "extraResources": [
-      {
-        "from": "backend",
-        "to": "backend",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "emulators",
-        "to": "emulators",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "roms",
-        "to": "roms",
-        "filter": [
-          "**/*"
-        ]
-      }
     ],
     "nodeGypRebuild": false,
     "buildDependenciesFromSource": false,
-    "electronRebuild": true,
     "win": {
       "target": [
         {

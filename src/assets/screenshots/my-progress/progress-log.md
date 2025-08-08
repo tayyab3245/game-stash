@@ -12,7 +12,7 @@
 ##  **Phase 1: Foundation & Early Experiments**
 *Learning 3D fundamentals and establishing core concepts*
 
-### 🔬 **Milestone 1: First Steps Into 3D**
+###  **Milestone 1: First Steps Into 3D**
 **Technologies:** Three.js, WebGL, Texture Mapping  
 **Date:** Early Development Phase
 
@@ -24,11 +24,11 @@
 
 </div>
 
-**🎯 Achievement:** Learning the Fundamentals
+**Achievement:** Learning the Fundamentals
 
 My journey began with learning how Three.js camera systems work and figuring out how to map flat textures onto 3D meshes. I was fascinated by the challenge of making 2D images feel three-dimensional. My first attempts were creative workarounds - smart tricks using geometric subdivision techniques to simulate 3D depth with planar surfaces rather than true volumetric meshes. It wasn't real 3D yet, but I was determined to understand texture coordinate mapping and camera perspective manipulation to achieve these pseudo-3D effects.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Three.js camera system integration
 - Texture coordinate mapping fundamentals  
 - Geometric subdivision techniques
@@ -48,11 +48,11 @@ My journey began with learning how Three.js camera systems work and figuring out
 
 </div>
 
-**🎯 Achievement:** The Big Switch
+**Achievement:** The Big Switch
 
 I made the leap to real 3D mesh systems using BoxGeometry with proper vertex normal calculations. I was worried about performance - would GPU memory allocation and draw calls slow everything down? This was my first real attempt at authentic 3D rendering, though it looked flat without proper material lighting models. No ambient occlusion, no directional lighting - just raw geometry. But it was progress.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - BoxGeometry implementation
 - Vertex normal calculations
 - GPU memory optimization considerations
@@ -72,11 +72,11 @@ I made the leap to real 3D mesh systems using BoxGeometry with proper vertex nor
 
 </div>
 
-**🎯 Achievement:** Multiple Objects, Multiple Problems
+**Achievement:** Multiple Objects, Multiple Problems
 
 I successfully rendered more than one game cover instance using object3D.clone(), but I had no idea what I was doing with camera positioning. The games weren't arranged properly - no systematic positioning matrices, no proper orthographic projection setup. Objects were just floating randomly in 3D space. I needed to learn spatial arrangement algorithms, but I was excited to see multiple covers rendering at once.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Object3D.clone() implementation
 - Multi-instance rendering
 - Spatial arrangement algorithm needs identified
@@ -96,11 +96,11 @@ I successfully rendered more than one game cover instance using object3D.clone()
 
 </div>
 
-**🎯 Achievement:** My First Real Achievement - Five Game Covers!
+**Achievement:** My First Real Achievement - Five Game Covers!
 
 This was a huge milestone for me. I successfully rendered five separate game covers with proper scene graph hierarchy and camera positioning. I had figured out basic frustum culling and consistent mesh scaling factors. The texture loading pipeline finally worked with Three.js materials. This felt like my first real prototype - something I could actually show off.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Scene graph hierarchy implementation
 - Frustum culling optimization
 - Consistent mesh scaling
@@ -123,11 +123,11 @@ This was a huge milestone for me. I successfully rendered five separate game cov
 
 </div>
 
-**🎯 Achievement:** Adding Interactivity - The UI Challenge Begins
+**Achievement:** Adding Interactivity - The UI Challenge Begins
 
 I wanted titles for each game and a delete button, so I dove into integrating DOM overlays with CSS positioning calculations relative to 3D object screen projections. Getting long-press event detection working with setTimeout patterns was tricky. The real challenge was coordinating 3D scene interactions with 2D DOM elements - viewport transformation matrices became my new obsession.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - DOM overlay integration
 - CSS positioning calculations
 - Long-press event detection
@@ -147,11 +147,11 @@ I wanted titles for each game and a delete button, so I dove into integrating DO
 
 </div>
 
-**🎯 Achievement:** The Selection System - A Serious Technical Challenge
+**Achievement:** The Selection System - A Serious Technical Challenge
 
 I had working titles per game, but I wanted a single bubble showing which game was selected. This was where things got really complicated. I needed to understand Three.js Raycaster for mouse-to-3D object intersection detection and completely refactor my event handling architecture. The challenge of bridging WebGL coordinate systems with DOM events required extensive matrix transformation calculations. Plus, I was building the server-side REST API integration at the same time - it was overwhelming but exciting.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Three.js Raycaster implementation
 - Mouse-to-3D intersection detection
 - Event handling architecture refactor
@@ -174,11 +174,11 @@ I had working titles per game, but I wanted a single bubble showing which game w
 
 </div>
 
-**🎯 Achievement:** Backend Finally Working - Full-Stack Achievement
+**Achievement:** Backend Finally Working - Full-Stack Achievement
 
 I was so proud when I got all my games displaying with a working backend! Complete client-server architecture with Express.js, SQLite database, and RESTful API endpoints. I could finally update names and delete games from the server. The technical implementation of real-time UI updates following database mutations was challenging, but seeing it all work together was incredibly satisfying.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Express.js server architecture
 - SQLite database integration
 - RESTful API endpoints
@@ -199,11 +199,11 @@ I was so proud when I got all my games displaying with a working backend! Comple
 
 </div>
 
-**🎯 Achievement:** Second Working Version - Academic Milestone
+**Achievement:** Second Working Version - Academic Milestone
 
 This was my second stable iteration and I was incredibly proud of it - this is what I submitted to my professor for school! I had achieved stable CRUD functionality with comprehensive database schema design and proper API endpoint architecture. At this stage, I was still working with Nintendo Switch titles, but the full-stack integration was solid. The system included proper error handling, data validation, and responsive UI feedback mechanisms. It felt amazing to have a working application that could manage games end-to-end.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Stable CRUD functionality
 - Comprehensive database schema
 - Proper error handling
@@ -227,11 +227,11 @@ This was my second stable iteration and I was incredibly proud of it - this is w
 
 </div>
 
-**🎯 Achievement:** Adding Rotation - Bringing Games to Life
+**Achievement:** Adding Rotation - Bringing Games to Life
 
 I came back to the project after some time and decided to add full rotation to the game covers. Implementing quaternion-based rotation controls with smooth interpolation algorithms was a technical challenge, but seeing the games rotate smoothly was so satisfying. I used requestAnimationFrame optimization and had to understand Euler angles and gimbal lock prevention to get natural rotation behavior with SLERP interpolation.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Quaternion-based rotation controls
 - SLERP interpolation algorithms
 - RequestAnimationFrame optimization
@@ -251,11 +251,11 @@ I came back to the project after some time and decided to add full rotation to t
 
 </div>
 
-**🎯 Achievement:** Making It More Than a Display - Play Button with Status Lights
+**Achievement:** Making It More Than a Display - Play Button with Status Lights
 
 I wanted my project to be more than just a cover display, so I added a play button with emulator and ROM support. The two green LED indicators showed the status of whether files were available - it was like a traffic light system! I developed binary status indication through filesystem API integration with real-time monitoring. I later simplified this approach, but seeing those status lights work was exciting.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Filesystem API integration
 - Binary status indication system
 - Real-time file monitoring
@@ -278,11 +278,11 @@ I wanted my project to be more than just a cover display, so I added a play butt
 
 </div>
 
-**🎯 Achievement:** The Nintendo 3DS Pivot - Following My Inspiration
+**Achievement:** The Nintendo 3DS Pivot - Following My Inspiration
 
 I realized I wanted to design a Nintendo 3DS-inspired UI. I've always been inspired by Nintendo's design, and after playing my 3DS recently, I added my first 3DS title - Sonic Generations. The mesh dimensions were completely wrong though (still tuned for Switch cartridges). This transition required completely recalculating UV mapping coordinates, texture scaling factors, and mesh proportions to match physical 3DS game case specifications.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - UV mapping coordinate recalculation
 - Texture scaling factor adjustment
 - Mesh proportion optimization
@@ -302,11 +302,11 @@ I realized I wanted to design a Nintendo 3DS-inspired UI. I've always been inspi
 
 </div>
 
-**🎯 Achievement:** The Complex Challenge of Real 3DS Covers
+**Achievement:** The Complex Challenge of Real 3DS Covers
 
 This was one of the most technically challenging parts of my journey. I wanted my covers to look exactly like real Nintendo 3DS game cases, which meant dividing each cover image into three parts: front, back, and spine. I had to develop a complex texture atlas segmentation algorithm with custom UV coordinate calculations. Getting the texture sampling right to prevent bleeding between regions while maintaining seamless transitions was incredibly difficult, but I was determined to make it perfect.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Texture atlas segmentation algorithm
 - Custom UV coordinate calculations
 - Texture bleeding prevention
@@ -315,10 +315,10 @@ This was one of the most technically challenging parts of my journey. I wanted m
 
 ---
 
-## 🏗️ **Phase 6: System Architecture & Optimization**
+##  **Phase 6: System Architecture & Optimization**
 *Scaling to multiple games and advanced rendering techniques*
 
-### 📈 **Milestone 13: Multi-Game Performance Optimization**
+###  **Milestone 13: Multi-Game Performance Optimization**
 **Technologies:** Object Pooling, Memory Management, Batch Rendering  
 **Scale:** Growing game collection
 
@@ -330,11 +330,11 @@ This was one of the most technically challenging parts of my journey. I wanted m
 
 </div>
 
-**🎯 Achievement:** Growing My Collection - Technical Scaling Challenges
+**Achievement:** Growing My Collection - Technical Scaling Challenges
 
 As I added more games, I faced new technical challenges with memory management and GPU optimization. I was excited to see multiple games displayed together, but I had to implement object pooling patterns to reduce performance issues and optimize rendering through batch techniques. Watching my collection grow while maintaining smooth performance felt like a real achievement.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Object pooling patterns
 - GPU memory optimization
 - Batch rendering techniques
@@ -355,11 +355,11 @@ As I added more games, I faced new technical challenges with memory management a
 
 </div>
 
-**🎯 Achievement:** Making Everything Smooth and Organic
+**Achievement:** Making Everything Smooth and Organic
 
 I wanted my game covers to have that smooth, rounded look that felt more organic and pleasant. Implementing sophisticated edge rounding algorithms using subdivision surface techniques and Bézier curves was incredibly complex, but the results were so worth it. Understanding geometric continuity and vertex normal smoothing while maintaining proper UV mapping across modified geometry was challenging, but seeing those soft, rounded corners made the whole collection look so much more polished.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Subdivision surface techniques
 - Bézier curve calculations
 - Geometric continuity principles
@@ -384,11 +384,11 @@ I wanted my game covers to have that smooth, rounded look that felt more organic
 
 </div>
 
-**🎯 Achievement:** Building Intuitive Navigation Systems
+**Achievement:** Building Intuitive Navigation Systems
 
 I added side navigation controls to make browsing through games feel more intuitive and interactive. The technical challenge of coordinating button state with 3D scene navigation required careful event handling and state synchronization between UI components and Three.js scene manipulation. Wrestling with CSS layout challenges taught me that sometimes the simplest-looking features are the hardest to implement properly.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Event handling pipeline optimization
 - State synchronization between UI and 3D scene
 - CSS layout mastery (z-index, cascade handling)
@@ -409,11 +409,11 @@ I added side navigation controls to make browsing through games feel more intuit
 
 </div>
 
-**🎯 Achievement:** Creating Dynamic Layout Systems
+**Achievement:** Creating Dynamic Layout Systems
 
 I achieved a stable three-layer layout structure that I was really proud of: header component, middle viewport container, and bottom command interface. Building custom SVG components and implementing complex spatial arrangement algorithms for multi-row game display configurations was one of my biggest technical challenges. I eventually realized I was overcomplicating things and reduced scope to focus on stability and performance.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Three-layer architecture pattern
 - Custom SVG component development
 - Complex spatial arrangement algorithms
@@ -437,11 +437,11 @@ I achieved a stable three-layer layout structure that I was really proud of: hea
 
 </div>
 
-**🎯 Achievement:** Bringing Icons to Life & Theme Mastery
+**Achievement:** Bringing Icons to Life & Theme Mastery
 
 I was so excited to engineer a sophisticated SVG animation system that replicated Nintendo's grid transition patterns! Implementing CSS keyframe animations, transform matrices, and timing functions to achieve bounce and elastic easing effects was incredibly fun. I advanced the animation system with physics-based bounce calculations and jelly-like deformation effects using CSS cubic-bezier curves and spring physics algorithms.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Nintendo-inspired animation patterns
 - Physics-based bounce calculations
 - CSS cubic-bezier curves and spring physics
@@ -466,11 +466,11 @@ I was so excited to engineer a sophisticated SVG animation system that replicate
 
 </div>
 
-**🎯 Achievement:** Perfecting Every Detail
+**Achievement:** Perfecting Every Detail
 
 I refined the side navigation arrow components with improved visual design, enhanced click target areas, and better integration with my overall design language. I developed sophisticated custom SVG audio control components with theme-aware styling and rounded design language that stayed consistent with my overall application aesthetics. Every detail mattered in achieving that professional polish.
 
-**🔧 Technical Highlights:**
+**Technical Highlights:**
 - Custom SVG component optimization
 - Theme-aware component styling
 - Audio state management with visual feedback
@@ -490,7 +490,7 @@ I refined the side navigation arrow components with improved visual design, enha
 
 </div>
 
-**🎯 Achievement:** The Final Achievement - Complete Architecture Refactoring
+**Achievement:** The Final Achievement - Complete Architecture Refactoring
 
 This was the culmination of my entire journey! I executed comprehensive codebase refactoring with complete modularization of component architecture and implementation of centralized theme management system. I reorganized the entire file structure with clear separation of concerns, implemented unified design tokens across light and dark variants, and achieved consistent visual polish throughout the entire application.
 

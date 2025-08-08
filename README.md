@@ -77,7 +77,7 @@ This project is licensed under the Creative Commons Attribution-NonCommercial-No
 
 ---
 
-## 🛠️ Development Journey
+## Development Journey
 
 **See how this project evolved from concept to production**
 

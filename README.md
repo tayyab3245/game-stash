@@ -49,8 +49,8 @@ The app features fully 3D game covers that you can rotate and interact with. Eac
 
 ```bash
 # Clone the repository
-git clone https://github.com/tayyab3245/game-library.git
-cd game-library
+git clone https://github.com/tayyab3245/game-stash.git
+cd game-stash
 
 # Install dependencies
 npm install

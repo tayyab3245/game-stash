@@ -61,3 +61,27 @@ export const buildMats3DS = (
     makeMat(slice(U_BACK_OFFSET, U_BACK_WIDTH)), // back
   ];
 };
+// Widest a cover scan needs to be: the front panel is ~half the wrap and is never drawn
+// wider than ~1000 device px, so 2560 stays sharp while using a fraction of the GPU memory
+// that 6000px+ scans would.
+const MAX_COVER_WIDTH = 2560;
+
+/**
+ * Fetch and decode a cover off the main thread (createImageBitmap), downscaled to
+ * MAX_COVER_WIDTH. EXIF rotation is applied, and the bitmap is pre-flipped because
+ * WebGL ignores flipY for ImageBitmaps.
+ */
+export const loadCoverTexture = async (url: string): Promise<THREE.Texture> => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const blob = await response.blob();
+  const bitmap = await createImageBitmap(blob, {
+    resizeWidth: MAX_COVER_WIDTH,   // height follows the aspect ratio
+    resizeQuality: 'high',
+    imageOrientation: 'flipY',
+  });
+  const tex = new THREE.Texture(bitmap);
+  tex.flipY = false;
+  tex.needsUpdate = true;
+  return tex;
+};

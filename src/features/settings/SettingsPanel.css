@@ -1,0 +1,12 @@
+/* Settings gear (dialog look lives in components/dialog/Dialog.css) */
+
+.settings-gear-icon {
+  width: 56%;
+  height: 56%;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.settings-button.is-open .settings-gear-icon {
+  transform: rotate(90deg);
+}
+

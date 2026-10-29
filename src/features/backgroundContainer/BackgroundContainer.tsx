@@ -24,8 +24,7 @@ const BackgroundContainer = forwardRef<BackgroundContainerRef, BackgroundContain
     },
     setSize: (width: number, left: number) => {
       if (containerRef.current) {
-        containerRef.current.style.width = '110vw'; // Full viewport width
-        containerRef.current.style.left = '0px';    // Start from left edge
+        // Panel insets come from the theme styles (left/right); nothing to size here
       }
     },
     clearTransform: () => {

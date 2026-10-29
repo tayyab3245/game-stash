@@ -22,7 +22,10 @@ class SettingsManager {
       app: {
         lastEmulatorType: '3ds',
         autoDetectEmulator: true,
-        rememberWindowSize: true
+        rememberWindowSize: true,
+        showClock: true,
+        showHints: true,
+        music: true
       }
     };
   }

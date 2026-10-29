@@ -1,0 +1,95 @@
+/* Add/Edit Game bits on top of the shared dialog look (components/dialog/Dialog.css) */
+
+.dialog-panel__header svg {
+  width: 30px;
+  height: 30px;
+}
+
+/* Cover preview: an inset well, like the empty slot on the shelf */
+.game-form__cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: clamp(120px, 24vh, 210px);
+  padding: 12px;
+  border: none;
+  border-radius: 22px;
+  background: rgba(127, 127, 127, 0.1);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.12);
+  color: var(--gs-text-secondary);
+  font: inherit;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.game-form__cover:hover {
+  transform: scale(1.01);
+}
+
+.game-form__cover img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+}
+
+.game-form__cover-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.game-form__cover-empty svg {
+  width: 28px;
+  height: 28px;
+  opacity: 0.6;
+}
+
+.game-form__input {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gs-text);
+  background: rgba(127, 127, 127, 0.12);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+.game-form__input:focus {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(255, 193, 77, 0.6);
+}
+
+.game-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.game-form__spacer {
+  flex: 1;
+}
+
+.game-form__delete {
+  color: #d9534f;
+}
+
+.game-form__save {
+  margin-top: 0;
+  padding: 12px 40px;
+}
+
+.game-form__save:disabled {
+  opacity: 0.45;
+  transform: none;
+  box-shadow: var(--gs-shadow);
+}

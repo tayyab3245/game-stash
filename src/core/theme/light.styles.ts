@@ -94,10 +94,9 @@ export const lightStyles = {
   header: {
     container: {
       position: 'relative' as const,
-      minHeight: 120,  // Increased from 120 to 150 for more vertical space
-      padding: `${LIGHT_UNIFIED.spacingLarge} 48px 40px 48px`,  // Increased horizontal padding
-      maxWidth: '900px',  // Increased from 800px to 900px for more horizontal space
-      margin: '0 auto',
+      minWidth: 0,  // lets the title ellipsize instead of pushing the side clusters
+      maxWidth: 'min(760px, 100%)',
+      padding: '14px clamp(20px, 3vw, 44px) 16px',
       background: LIGHT_UNIFIED.surface,
       backdropFilter: 'blur(10px)',
       borderRadius: `0 0 ${LIGHT_UNIFIED.spacingLarge} ${LIGHT_UNIFIED.spacingLarge}`,
@@ -106,10 +105,11 @@ export const lightStyles = {
     },
     titleWrap: {
       textAlign: 'center' as const,
-      marginBottom: 12,
+      marginBottom: 2,
     },
     gameTitle: {
-      fontSize: 44,
+      fontSize: 'clamp(22px, 2.8vw, 38px)',
+      lineHeight: 1.2,
       fontWeight: 700,
       color: '#000000',  // Black text for light theme
       margin: 0,
@@ -119,15 +119,15 @@ export const lightStyles = {
       textOverflow: 'ellipsis',
     },
     hours: {
-      fontSize: 16,
+      fontSize: 'clamp(12px, 1.1vw, 15px)',
       color: 'rgba(0, 0, 0, 0.7)',  // Dark gray for light theme
       fontWeight: 500,
     },
     dateTime: {
-      position: 'absolute' as const,
-      top: 28,
-      right: 28,
-      fontSize: 28,
+      fontSize: 'clamp(16px, 1.6vw, 24px)',
+      fontVariantNumeric: 'tabular-nums' as const,
+      whiteSpace: 'nowrap' as const,
+      padding: '0 6px',
       fontWeight: 700,
       color: '#000000',  // Black text for light theme
       textShadow: 'none',  // Remove text shadow
@@ -137,14 +137,12 @@ export const lightStyles = {
   // === THEME TOGGLE APPEARANCE (CLEAN SQUARE) ===
   themeToggle: {
     container: {
-      position: 'absolute' as const,
-      top: 16,   // Consistent top position
-      right: 130, // More spacing: 96px button + 18px gap + 16px from right = 130px
+      position: 'relative' as const,
       zIndex: 100,
     },
     button: {
-      width: 96,  // 2x larger (48 * 2)
-      height: 96, // 2x larger (48 * 2)
+      width: 'var(--gs-btn)',
+      height: 'var(--gs-btn)',
       padding: 0,
       background: LIGHT_UNIFIED.surface,
       border: 'none',  
@@ -152,7 +150,7 @@ export const lightStyles = {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: '24px',  // 2x larger radius (12 * 2)
+      borderRadius: 'calc(var(--gs-btn) * 0.26)',
       transition: 'all 0.3s ease',
       backdropFilter: 'blur(10px)',
       boxShadow: LIGHT_UNIFIED.standardShadow,
@@ -167,18 +165,16 @@ export const lightStyles = {
   // === VOLUME BUTTON APPEARANCE (CLEAN SQUARE) ===
   volumeButton: {
     container: {
-      position: 'absolute' as const,
-      top: 16,    // Same top as theme toggle
-      right: 16,  // Consistent right margin
+      position: 'relative' as const,
       zIndex: 100,
     },
     button: {
-      width: 96,  // 2x larger (48 * 2)
-      height: 96, // 2x larger (48 * 2)
+      width: 'var(--gs-btn)',
+      height: 'var(--gs-btn)',
       padding: 0,
       background: LIGHT_UNIFIED.surface,
       border: 'none',  
-      borderRadius: '24px',  // 2x larger radius (12 * 2)
+      borderRadius: 'calc(var(--gs-btn) * 0.26)',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
@@ -198,19 +194,17 @@ export const lightStyles = {
   // === GRID BUTTONS APPEARANCE (CLEAN - LARGER SIZE) ===
   gridButtons: {
     container: {
-      position: 'absolute' as const,
-      left: 16,   // Consistent left margin to match right buttons
-      top: 16,    // Consistent top to match right buttons
+      position: 'relative' as const,
       display: 'flex',
-      gap: '12px', // 2x larger gap (6 * 2)
+      gap: 'var(--gs-gap)',
       zIndex: 100,
     },
     button: {
-      width: 96,  // 2x larger (48 * 2)
-      height: 96, // 2x larger (48 * 2)
+      width: 'var(--gs-btn)',
+      height: 'var(--gs-btn)',
       background: LIGHT_UNIFIED.surface,
       border: 'none',  // Clean like arrow buttons
-      borderRadius: '24px',  // 2x larger radius (12 * 2)
+      borderRadius: 'calc(var(--gs-btn) * 0.26)',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
@@ -242,7 +236,8 @@ export const lightStyles = {
       border: 'none',
       // borderRadius handled by component for split styling
       color: '#000000',  // Black text for light theme
-      fontSize: '36px',      // Large font like header
+      fontSize: 'clamp(20px, 2.2vw, 30px)',
+      letterSpacing: '0.04em',
       fontWeight: 700,       // Bold like header
       transition: 'all 0.3s ease',
       padding: '12px 24px',  // Capsule padding
@@ -297,7 +292,7 @@ export const lightStyles = {
   navigationButton: {
     button: {
       position: 'absolute' as const,
-      top: '60%',
+      top: 'calc(50% + 28px)',  // centre of the 3D view (SHELF_VIEWPORT: top 56, bottom 0)
       transform: 'translateY(-50%)',
       width: 72,
       height: 72,
@@ -337,9 +332,10 @@ export const lightStyles = {
   backgroundContainer: {
     container: {
       position: 'absolute' as const,
-      left: 0,
-      top: '10px',            // Add spacing below header (header is ~120px + 40px margin)
-      bottom: '32px',          // space for CommandBar
+      left: 16,
+      right: 16,
+      top: 4,
+      bottom: 4,
       borderRadius: LIGHT_UNIFIED.borderRadiusLarge,
       background: LIGHT_UNIFIED.surface,
       pointerEvents: 'none' as const,
@@ -353,37 +349,35 @@ export const lightStyles = {
   // === BUTTON GROUP BACKGROUNDS ===
   leftButtonBackground: {
     container: {
-      position: 'absolute' as const,
-      left: 0,      // Start from edge
-      top: 0,       // Start from edge  
-      width: 290,   // Much larger: 2 buttons (96px each) + gap (12px) + generous padding (40px each side) = 284px
-      height: 144,  // Much larger: 1 button (96px) + generous padding (24px each side) = 144px
+      position: 'relative' as const,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 'var(--gs-gap)',
+      padding: 'var(--gs-pad)',
       borderTopLeftRadius: 0,     // Square top-left (touches edge)
       borderTopRightRadius: 0,    // Square top-right 
       borderBottomLeftRadius: 0,  // Square bottom-left (touches edge)
       borderBottomRightRadius: '40px',  // Only round the inner bottom corner
-      background: LIGHT_UNIFIED.surface,
-      pointerEvents: 'none' as const,
-      zIndex: 5,     // Behind buttons but above background
-      boxShadow: LIGHT_UNIFIED.standardShadow,
+      background: 'transparent',  // buttons float on their own, no backing panel
+      zIndex: 5,
+      boxShadow: 'none',
     },
   },
 
   rightButtonBackground: {
     container: {
-      position: 'absolute' as const,
-      right: 0,     // Start from edge
-      top: 0,       // Start from edge
-      width: 290,   // Much larger: 2 buttons (96px each) + gap (18px) + generous padding (40px each side) = 290px
-      height: 144,  // Much larger: 1 button (96px) + generous padding (24px each side) = 144px
+      position: 'relative' as const,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 'var(--gs-gap)',
+      padding: 'var(--gs-pad)',
       borderTopLeftRadius: 0,     // Square top-left
       borderTopRightRadius: 0,    // Square top-right (touches edge)
       borderBottomLeftRadius: '40px',   // Only round the inner bottom corner
       borderBottomRightRadius: 0, // Square bottom-right (touches edge)
-      background: LIGHT_UNIFIED.surface,
-      pointerEvents: 'none' as const,
-      zIndex: 5,     // Behind buttons but above background
-      boxShadow: LIGHT_UNIFIED.standardShadow,
+      background: 'transparent',  // buttons float on their own, no backing panel
+      zIndex: 5,
+      boxShadow: 'none',
     },
   }
 };

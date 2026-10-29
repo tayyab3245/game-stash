@@ -1,0 +1,186 @@
+/* Shared dialog look (Settings, Add/Edit Game) - colours come from theme tokens (tokens.css) */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: dialog-fade 0.2s ease;
+}
+
+.dialog-overlay--light { background: rgba(255, 255, 255, 0.45); }
+.dialog-overlay--dark { background: rgba(0, 0, 0, 0.55); }
+
+.dialog-panel {
+  width: min(520px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: clamp(18px, 4vh, 32px) clamp(18px, 4vw, 36px);
+  border-radius: clamp(28px, 4vh, 40px);
+  background: var(--gs-surface);
+  box-shadow: var(--gs-shadow);
+  color: var(--gs-text);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 2vh, 18px);
+  animation: dialog-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dialog-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.dialog-panel__header svg {
+  width: 30px;
+  height: 30px;
+}
+
+.dialog-panel__header h2 {
+  margin: 0;
+  font-size: clamp(22px, 3.2vh, 28px);
+  font-weight: 800;
+}
+
+.dialog-section h3 {
+  margin: 0 0 6px 4px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-text-secondary);
+}
+
+.dialog-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dialog-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: 20px;
+  background: rgba(127, 127, 127, 0.08);
+}
+
+.dialog-row__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.dialog-row__label {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.dialog-row__hint {
+  font-size: 13px;
+  color: var(--gs-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dialog-row__actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Springy on/off switch */
+.dialog-switch {
+  position: relative;
+  width: 58px;
+  height: 34px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(127, 127, 127, 0.28);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.25s ease;
+}
+
+.dialog-switch.is-on {
+  background: #ffc14d; /* same warm yellow as the shelf selector */
+}
+
+.dialog-switch__knob {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dialog-switch.is-on .dialog-switch__knob {
+  transform: translateX(24px);
+}
+
+.dialog-switch:active .dialog-switch__knob {
+  width: 30px;
+}
+
+/* Small rounded buttons for picking paths */
+.dialog-chip {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gs-text);
+  background: var(--gs-surface);
+  box-shadow: var(--gs-shadow);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+}
+
+.dialog-chip:hover { transform: translateY(-1px); box-shadow: var(--gs-shadow-hover); }
+.dialog-chip:active { transform: translateY(1px); box-shadow: var(--gs-shadow-pressed); }
+
+.dialog-chip--quiet {
+  background: transparent;
+  box-shadow: none;
+  color: var(--gs-text-secondary);
+}
+
+.dialog-done {
+  align-self: center;
+  margin-top: 4px;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 56px;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--gs-text);
+  background: var(--gs-surface);
+  box-shadow: var(--gs-shadow);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+}
+
+.dialog-done:hover { transform: translateY(-2px); box-shadow: var(--gs-shadow-hover); }
+.dialog-done:active { transform: translateY(1px); box-shadow: var(--gs-shadow-pressed); }
+
+@keyframes dialog-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialog-pop {
+  0% { opacity: 0; transform: translateY(20px) scale(0.94); }
+  100% { opacity: 1; transform: none; }
+}

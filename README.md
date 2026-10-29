@@ -1,142 +1,105 @@
 # Game Stash
 
-A desktop application for organizing and launching your Nintendo 3DS game collection. Built with React, Three.js, and Electron.
+A desktop shelf for your Nintendo 3DS collection, styled after the 3DS and Switch home menus. Every game sits on the shelf as a 3D game case you can browse, spin and launch.
 
-## Download
+Built with React, TypeScript, Three.js and Electron. Runs on macOS and Windows.
 
-[![Download Game Stash](https://img.shields.io/badge/Download-Game%20Stash%20v1.0.0-blue?style=for-the-badge&logo=download)](https://github.com/tayyab3245/game-library/releases/latest)
+<div align="center">
 
-**Installation Options:**
-- **Portable Version** - `Game Stash 1.0.0.exe` (No installation required)
-- **Full Installer** - `Game Stash Setup 1.0.0.exe` (Traditional installer)
+![Game Stash in action](src/assets/screenshots/demo.gif)
 
-**Requirements:** Windows 10/11
+</div>
 
-![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)
+> Emulators and ROMs are not included. Game Stash only organizes and launches files you already have. A shelf of just covers is fine too.
 
 ## Features
 
-- Interactive 3D game library with Three.js rendering
-- Automatic ROM and emulator detection
-- Light and dark themes with single/double row layouts
-- One-click game launching through Electron IPC
-- Built-in sound effects and smooth animations
-- Fully local - no internet connection required
+- **3D game cases.** Each cover scan is wrapped around a rounded case, with the back, spine and front on the right faces. Click a game to select it, drag to spin it.
+- **Three layouts.** One big row, two rows, or a compact 2×2 grid. The games morph between layouts, and the panel they sit on stretches with them.
+- **Console-style browsing.** Arrow keys or the on-screen arrows move the selector. The selected game is kept in the middle of the screen until you reach either end of the shelf, where the selector walks to the edge instead. The selected game lifts toward you.
+- **Add games with just a cover.** A title and a cover scan are all a game needs. Add a game file and an emulator whenever you want to launch it.
+- **Settings.** Pick a default emulator (a Windows `.exe` or a macOS `.app`) and a ROM folder. Games without their own paths use these, and ROMs are matched to games by title, so "Pokémon Y" finds `Pokemon Y (USA).3ds`. You can also toggle the clock, hints and background music.
+- **Light and dark themes**, a TV-style volume control, and one soft click sound, pitched up and down, for every button.
+- **Everything stays local.** Games, covers and settings live on your computer. No account, no internet needed.
 
-## 3D Game Cover Showcase
+| Dark theme | Two rows |
+|---|---|
+| ![Dark theme](src/assets/screenshots/dark-single.png) | ![Two rows](src/assets/screenshots/light-double.png) |
 
-The app features fully 3D game covers that you can rotate and interact with. Each cover is rendered as a complete 3D mesh with proper depth and lighting.
+| Compact grid | Settings |
+|---|---|
+| ![Compact grid, dark theme](src/assets/screenshots/dark-grid.png) | ![Settings](src/assets/screenshots/settings.png) |
 
-<div align="center">
+![Editing a game](src/assets/screenshots/edit.png)
 
-![3D Game Demo](src/assets/screenshots/3d-game-demo.gif)
+## Download
 
----
+Get the latest build from the [Releases page](https://github.com/tayyab3245/game-stash/releases/latest).
 
-*Interactive 3D game covers with realistic rotation and depth*
+- **macOS (Apple Silicon):** `Game Stash-1.1.0-arm64.dmg`. The app isn't signed with an Apple developer certificate, so the first time, right-click it and choose **Open**.
+- **Windows:** build it from source (below).
 
-</div>
-
-## Screenshots
-
-| Light Theme | Dark Theme |
-|-------------|------------|
-| ![Light Theme](src/assets/screenshots/light-theme-single-row.png) | ![Dark Theme](src/assets/screenshots/dark-theme-single-row.png) |
-
-> ⚠️ Emulators and ROMs are not included. The app only manages your existing local files.
-
-## For Developers
+## Run it locally
 
 ```bash
-# Clone the repository
 git clone https://github.com/tayyab3245/game-stash.git
 cd game-stash
-
-# Install dependencies
 npm install
-
-# Start development mode
 npm run dev
 ```
 
-### Build Production Executable:
+`npm run dev` starts the React dev server and opens the Electron window. Set `GAME_STASH_DEVTOOLS=1` to also open DevTools.
+
+<details>
+<summary>macOS setup notes</summary>
+
+The repo's `.npmrc` is set up for Windows builds. On a Mac, install with the platform overridden, then make sure Electron and the SQLite module are in place:
+
 ```bash
-npx electron-builder build --win --publish=never
+npm_config_target_platform=darwin npm_config_target_arch=arm64 npm install
+node node_modules/electron/install.js
+npx electron-rebuild -f -w sqlite3
 ```
 
-## Tech Stack
+Recent npm versions skip install scripts unless they're approved, which is why the last two commands are needed.
 
-- **Frontend:** React + TypeScript + Three.js
-- **Desktop:** Electron with IPC communication
-- **Database:** SQLite for local game storage
-- **Audio:** Custom sound manager with multiple channels
+</details>
+
+### Build
+
+```bash
+npm run electron-pack-mac   # macOS .dmg
+npm run electron-pack-win   # Windows installer + portable .exe (build on Windows)
+```
+
+## How it works
+
+**Rendering (Three.js).** Each case is a `RoundedBoxGeometry` from the Three.js examples. The cover is a single scan of the whole case, so its texture is split into back, spine and front by UV offsets. These are hand-tuned to the standard 3DS scan size (3236 × 1360) so the art lines up on the right faces. Clicks become selections through Three's `Raycaster`.
+
+**The shelf.** The covers and the panel they sit on live in one group that slides past a still camera, which is what keeps them perfectly in sync. The panel's rounded shape, gradient and shadow are painted into a canvas texture sized to the panel, and drawn in its own pass underneath the covers. Each cover casts a soft shadow onto the panel, and the camera zooms so the panel fills the view in every layout.
+
+**Smoothness.** Cover scans can be 6000+ pixels wide. They're decoded off the main thread with `createImageBitmap`, downscaled to 2560px, and uploaded to the GPU as soon as they load, so scrolling never stalls on a new cover. Animations are frame-rate independent and run outside React, so React only re-renders when something actually changes.
+
+**Desktop layer (Electron).**
+- **Data:** games are stored in a local SQLite database, and settings in a JSON file, both in the app's user-data folder.
+- **Covers:** copied there too, and served to the renderer by a small local HTTP server.
+- **Launching:** the game is spawned with its emulator, or opened through macOS's `open` for `.app` bundles.
+
+**Sound.** Howler.js plays one short click sample at different playback rates. Pressing and releasing a button each click, and the background music starts on your first interaction.
+
+## Project layout
+
+```
+src/
+  Main.tsx                 app frame: top bar, shelf, command bar, dialogs
+  core/gameShelf/          the 3D shelf (layout, camera, panel, covers, controls)
+  core/audio/              sounds and music
+  core/theme/              light/dark styles and CSS tokens
+  features/                top-bar buttons, header, command bar, cursor, settings
+  components/              add/edit game dialog, help button, shared dialog styles
+  electron/                main process, SQLite database, settings, preload bridge
+```
 
 ## License
 
-This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License. You may share the work with attribution, but modification or commercial use is not permitted.
-
----
-
-## Development Journey
-
-**See how this project evolved from concept to production**
-
-<div align="center">
-
-[![View Development Timeline](https://img.shields.io/badge/View-Development%20Timeline-green?style=for-the-badge&logo=timeline)](src/assets/screenshots/my-progress/progress-log.md)
-
-### **1. 3D Breakthrough** → **2. Full-Stack Integration** → **3. Production Polish**
-
-</div>
-
-### **Milestone 1: Learning 3D Fundamentals**
-*From flat textures to real 3D meshes*
-
-<div align="center">
-
-| Early 3D Experiments | First Real 3D Achievement |
-|---------------------|---------------------------|
-| ![First 3D Attempt](src/assets/screenshots/my-progress/first-3d-cover-attempt1.png) | ![Five Game Covers](src/assets/screenshots/my-progress/initial-version-with-3d-mesh-render.png) |
-| *Learning Three.js fundamentals* | *First stable 5-game prototype* |
-
-</div>
-
-**Key Achievement:** Mastered Three.js camera systems, texture mapping, and scene graph hierarchy. Progressed from pseudo-3D effects to authentic 3D rendering with proper mesh geometry.
-
-### **Milestone 2: Full-Stack Architecture**
-*Building complete backend integration*
-
-<div align="center">
-
-| Nintendo 3DS Transformation | Advanced UI Systems |
-|-------------------|-------------------|
-| ![3DS Approach](src/assets/screenshots/my-progress/changed-approach-to-3ds.png) | ![Grid Layouts](src/assets/screenshots/my-progress/3-grid-layouts.png) |
-| *Nintendo 3DS design pivot* | *Multi-configuration layouts* |
-
-</div>
-
-**Key Achievement:** Implemented Express.js server, SQLite database, and developed complex texture atlas segmentation for authentic 3DS game cases. Mastered UV coordinate calculations and professional-grade 3D asset pipeline.
-
-### **Milestone 3: Production-Ready Polish**
-*Complete modular system with professional architecture*
-
-<div align="center">
-
-| **Early Stable Version** | **Final Production** |
-|-------------------------|----------------------------|
-| ![Early Light](src/assets/screenshots/my-progress/stable-light-version.png) | ![Final Light](src/assets/screenshots/my-progress/final-light.png) |
-| *Early prototype with basic functionality* | *Final production-ready system* |
-
-</div>
-
-**Key Achievement:** Complete architectural refactoring with modular components, centralized theme management, and unified design tokens. Transformed from prototype to professional-grade, maintainable system.
-
----
-
-<div align="center">
-
-[![View Complete Development Timeline](https://img.shields.io/badge/View%20Complete-Development%20Timeline-orange?style=for-the-badge&logo=timeline&logoColor=white)](src/assets/screenshots/my-progress/progress-log.md)
-
-</div>
-
-*Want to see the full journey? The complete timeline contains 18 major development phases with detailed technical explanations, problem-solving approaches, and insights into building a complex 3D application.*
+[Apache License 2.0](LICENSE). Free to use, modify and share.

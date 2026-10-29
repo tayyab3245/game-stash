@@ -6,8 +6,12 @@ export interface CustomCursorProps {
   enabled?: boolean;
 }
 
+// Below this speed (px/frame) the ring stays round
+const STRETCH_MIN_SPEED = 0.6;
+
 const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
-  const [position, setPosition] = useState({ x: 0, y: 0, angle: 0, stretch: 1, scale: 1 });
+  const ringRef = useRef<HTMLDivElement>(null);
+  const stretchAngle = useRef(0); // eased direction of the jelly stretch, in degrees
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
   const [buttonBounds, setButtonBounds] = useState<{
@@ -17,6 +21,8 @@ const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
     y: number;
     borderRadius: string;
   } | null>(null);
+  const buttonBoundsRef = useRef(buttonBounds);
+  buttonBoundsRef.current = buttonBounds;
   
   // Track the current button element to detect switches
   const currentButton = useRef<Element | null>(null);
@@ -81,19 +87,25 @@ const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
       const maxAllowedScale = 4.0; // Maximum scale to prevent visual bugs
       const cappedFinalScale = Math.min(finalScale, maxAllowedScale);
 
-      // Enhanced morphing logic for more stretch
+      // Jelly stretch: a long tail pointing along the motion (the original feel). Below a
+      // tiny speed it stays round and keeps its last direction, so it doesn't twitch at rest.
       const speed = Math.sqrt(velocity.current.x**2 + velocity.current.y**2);
-      const angle = Math.atan2(velocity.current.y, velocity.current.x) * (180 / Math.PI);
-      const stretch = Math.min(1 + speed * 0.25, 2.0); // Increased from 0.1 and 1.2 for more dramatic stretch
+      const stretch = Math.min(1 + Math.max(speed - STRETCH_MIN_SPEED, 0) * 0.25, 2.0);
+      if (speed > STRETCH_MIN_SPEED) {
+        stretchAngle.current = Math.atan2(velocity.current.y, velocity.current.x) * (180 / Math.PI);
+      }
+      const angle = stretchAngle.current;
 
       // Update position state for React
-      setPosition({
-        x: ringPos.current.x,
-        y: ringPos.current.y,
-        angle: angle + 90,
-        stretch: stretch * cappedFinalScale,
-        scale: cappedFinalScale
-      });
+      // Write straight to the DOM: a React render per frame was a steady source of jank
+      const ring = ringRef.current;
+      if (ring && !buttonBoundsRef.current) {
+        const scale = cappedFinalScale;
+        ring.style.left = `${ringPos.current.x}px`;
+        ring.style.top = `${ringPos.current.y}px`;
+        ring.style.transform = `translate(-50%, -50%) rotate(${angle + 90}deg) scaleY(${stretch * scale}) scaleX(${scale})`;
+        ring.style.setProperty('--cursor-angle', `${angle + 90}deg`);
+      }
 
       animationFrameId.current = requestAnimationFrame(animate);
     };
@@ -301,17 +313,21 @@ const CustomCursor: React.FC<CustomCursorProps> = ({ enabled = true }) => {
     <div className="custom-cursor-container">
       {/* Physics-based Ring Cursor with button eating effect */}
       <div
+        ref={ringRef}
         className={`physics-ring-cursor ${isClicking ? 'clicking' : ''} ${isHovering ? 'hovering' : ''} ${buttonBounds ? 'eating-button' : ''}`}
-        style={{
-          left: `${buttonBounds ? buttonBounds.x : position.x}px`,
-          top: `${buttonBounds ? buttonBounds.y : position.y}px`,
-          width: buttonBounds ? `${buttonBounds.width + 8}px` : '50px', // Updated from 40px to 50px
-          height: buttonBounds ? `${buttonBounds.height + 8}px` : '50px', // Updated from 40px to 50px
-          borderRadius: buttonBounds ? buttonBounds.borderRadius : '50%',
-          transform: buttonBounds 
-            ? `translate(-50%, -50%) scale(1)` 
-            : `translate(-50%, -50%) rotate(${position.angle || 0}deg) scaleY(${position.stretch || 1}) scaleX(${position.scale || 1})`,
-          ['--cursor-angle' as any]: buttonBounds ? '0deg' : `${position.angle || 0}deg`, // No rotation when eating buttons
+        style={buttonBounds ? {
+          left: `${buttonBounds.x}px`,
+          top: `${buttonBounds.y}px`,
+          width: `${buttonBounds.width + 8}px`,
+          height: `${buttonBounds.height + 8}px`,
+          borderRadius: buttonBounds.borderRadius,
+          transform: 'translate(-50%, -50%) scale(1)',
+          ['--cursor-angle' as any]: '0deg', // No rotation when eating buttons
+        } : {
+          // Position/rotation are written by the animation loop
+          width: '50px',
+          height: '50px',
+          borderRadius: '50%',
         }}
       />
     </div>

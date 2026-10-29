@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import * as THREE from 'three';
 import { clamp } from './helpers';
-import { LAYOUT, OVERSCROLL_DAMP } from './constants';
+import { LAYOUT, OVERSCROLL_DAMP, ShelfRows } from './constants';
 import SoundManager from '../audio/SoundManager';
 import { BackgroundContainerRef } from '../../features/backgroundContainer/types';
 
@@ -16,8 +16,9 @@ export interface ShelfControlParams {
   pxPerWorld: React.MutableRefObject<number>;
   revealWorld: React.MutableRefObject<number>;
   bounds: React.MutableRefObject<{ min: number; max: number }>;
+  shelfTargetX: React.MutableRefObject<number>;
   currentCenterIdx: React.MutableRefObject<number | null>;
-  rows: 1 | 2;
+  rows: ShelfRows;
   selectMesh: (mesh: THREE.Mesh | null, playSound?: boolean, navigationDirection?: 'left' | 'right' | 'up' | 'down' | null) => void;
   onSelect?: (idx: number | null) => void;
   onLongPress?: (idx: number) => void;
@@ -32,7 +33,7 @@ export default function useShelfControls(opts: ShelfControlParams) {
 
   /* Fixed-Selector Navigation with smooth animation: Games scroll underneath a centered selector */
   const STEP = () => {
-    const playable = opts.meshes.current.filter(m => !m.userData.isAdd);
+    const playable = opts.meshes.current; // the "+" slot at the end is reachable too
     if (!playable.length) return;
 
     const cols = opts.layoutInfo.current.cols;
@@ -45,11 +46,10 @@ export default function useShelfControls(opts: ShelfControlParams) {
     let nextIdx = current;
 
     // Handle navigation based on the current layout
-    if (rows === 2) {
+    if (rows > 1) {
       // 2-Row (Column-Major) Navigation - FIXED VERSION
       const curCol = Math.floor(current / rows);
       const curRow = current % rows;
-      console.log(`2-Row Navigation: current=${current}, curCol=${curCol}, curRow=${curRow}, dir=${JSON.stringify(dir)}, totalCols=${cols}`);
       
       if (dir.x === 1) { // Right (next column)
         const nextCol = curCol + 1;
@@ -74,7 +74,6 @@ export default function useShelfControls(opts: ShelfControlParams) {
       }
     } else {
       // 1-Row (Row-Major) Navigation
-      console.log(`1-Row Navigation: current=${current}, dir=${JSON.stringify(dir)}`);
       if (dir.x === 1) { // Right (next game)
         nextIdx = current + 1;
       } else if (dir.x === -1) { // Left (previous game)
@@ -84,7 +83,6 @@ export default function useShelfControls(opts: ShelfControlParams) {
 
     // Make sure the new index is within the valid range of playable items
     nextIdx = clamp(nextIdx, 0, playable.length - 1);
-    console.log(`Navigation: ${current} → ${nextIdx} (clamped to 0-${playable.length - 1})`);
 
     if (nextIdx !== current) {
       // Select the new game - this will trigger smooth animation via selectMesh
@@ -183,7 +181,8 @@ export default function useShelfControls(opts: ShelfControlParams) {
         return;
       }
 
-      const rect = canvas.getBoundingClientRect();
+      // Ray from the WebGL canvas itself (it's inset inside the container)
+      const rect = (canvas.querySelector('canvas') ?? canvas).getBoundingClientRect();
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       ray.setFromCamera(pointer, opts.camera.current);
@@ -246,14 +245,10 @@ export default function useShelfControls(opts: ShelfControlParams) {
         opts.selectedRef.current.rotation.y += dx * 0.012;
       } else if (mode === 'pan') {
         const newShelfX = opts.shelf.current.position.x + dx * 0.015;
-        // Left-anchored scrolling: can only scroll left (negative), not right (positive)
-        const clampedX = clamp(newShelfX, opts.bounds.current.min, 0);
+        const clampedX = clamp(newShelfX, opts.bounds.current.min, opts.bounds.current.max);
         opts.shelf.current.position.x = clampedX;
-
-        // Make the background follow the shelf
-        if (opts.backgroundRef.current) {
-          opts.backgroundRef.current.setPosition(clampedX * opts.pxPerWorld.current);
-        }
+        // Move the target too, otherwise the render loop eases the shelf back
+        opts.shelfTargetX.current = clampedX;
 
         // Auto-selection during panning removed to fix navigation
       }

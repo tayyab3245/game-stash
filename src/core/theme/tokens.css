@@ -1,0 +1,40 @@
+/* Theme tokens for CSS-styled components.
+   Values mirror DARK_UNIFIED / LIGHT_UNIFIED in dark.styles.ts and light.styles.ts;
+   keep them in sync. Components read these instead of hard-coding one theme
+   and patching the other, which is how styles leaked between themes. */
+
+[data-theme="dark"] {
+  --gs-surface: linear-gradient(180deg, #495057 0%, #343a40 95%);
+  --gs-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.08),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.40),
+    0 6px 12px rgba(0, 0, 0, 0.30);
+  --gs-shadow-hover:
+    inset 0 2px 3px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.40),
+    0 8px 16px rgba(0, 0, 0, 0.40);
+  --gs-shadow-pressed:
+    inset 0 1px 2px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.45),
+    0 2px 4px rgba(0, 0, 0, 0.25);
+  --gs-text: #f8f9fa;
+  --gs-text-secondary: rgba(248, 249, 250, 0.8);
+}
+
+[data-theme="light"] {
+  --gs-surface: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 95%);
+  --gs-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15),
+    0 6px 12px rgba(0, 0, 0, 0.1);
+  --gs-shadow-hover:
+    inset 0 2px 3px rgba(255, 255, 255, 0.8),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15),
+    0 8px 16px rgba(0, 0, 0, 0.15);
+  --gs-shadow-pressed:
+    inset 0 1px 2px rgba(0, 0, 0, 0.2),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.6),
+    0 2px 4px rgba(0, 0, 0, 0.15);
+  --gs-text: #000000;
+  --gs-text-secondary: rgba(0, 0, 0, 0.7);
+}

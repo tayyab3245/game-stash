@@ -1,0 +1,27 @@
+/* Long titles slide back and forth instead of being cut off with "…" */
+.gs-title__text {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* Soft fade at both edges while scrolling */
+.gs-title.is-scrolling {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.gs-title.is-scrolling .gs-title__text {
+  animation-name: gs-title-marquee;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-delay: 0.6s;
+}
+
+/* Rest at the start, slide to the end, rest, slide back */
+@keyframes gs-title-marquee {
+  0%, 20% { transform: translateX(0); }
+  50%, 70% { transform: translateX(var(--gs-marquee-shift)); }
+  100% { transform: translateX(0); }
+}

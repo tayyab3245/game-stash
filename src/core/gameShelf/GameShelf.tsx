@@ -1,10 +1,9 @@
-// Legacy 3D Game Shelf Component with BackgroundContainer integration
+// 3D Game Shelf: covers and the panel they sit on live in one group that scrolls past a still camera
 import React, { useEffect, useRef, useLayoutEffect, useState } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry';
 import SoundManager from '../audio/SoundManager';
 import NavigationButton from '../../features/navigation/NavigationButton';
-import BackgroundContainer from '../../features/backgroundContainer/BackgroundContainer';
 import { BackgroundContainerRef } from '../../features/backgroundContainer/types';
 import { HoverHintManager } from '../../features/hoverHints';
 import {
@@ -18,11 +17,14 @@ import {
   PANEL_RATIO,
   LAYOUT,
   SELECTOR,
+  ShelfRows,
+  SHELF_VIEWPORT,
 } from './constants';
 import { useTheme } from '../../features/theme/ThemeContext';
 import { clamp, same } from './helpers';
 import useShelfControls from './useShelfControls';
-import { buildMats3DS } from './materials';
+import { buildMats3DS, loadCoverTexture } from './materials';
+import { buildPanelMesh, disposePanelMesh, getEmptySlotTexture, getShadowTexture, makeDecalMesh, SHADOW_SPREAD } from './panel';
 
 export interface GameShelfProps {
   textures?: string[];
@@ -32,7 +34,8 @@ export interface GameShelfProps {
   frontHeightUnits?: number;  
   onSelect?: (idx: number | null) => void;  
   onLongPress?: (idx: number) => void;       
-  rows?: 1 | 2 ;            // 1 / 2 
+  onAddSelected?: () => void;   // the "+" slot was reached with the arrows (it's never a game index)
+  rows?: ShelfRows;        // 1 / 2 / 3
   showHints?: boolean;
   forceShowHints?: boolean;
   onHintsChange?: (show: boolean) => void;
@@ -47,6 +50,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
   frontHeightUnits = 12,
   onSelect,
   onLongPress,
+  onAddSelected,
   rows = 1,
   showHints = true,
   forceShowHints = false,
@@ -61,6 +65,12 @@ const GameShelf: React.FC<GameShelfProps> = ({
   const scene = useRef<THREE.Scene>(null!);
   const camera = useRef<THREE.PerspectiveCamera>(null!);
   const shelf = useRef<THREE.Group>(null!);
+  // The panel renders in its own pass underneath the covers (transparent objects always
+  // draw after opaque ones, so sharing a scene put it on top). Its group follows the shelf.
+  const panelScene = useRef<THREE.Scene>(new THREE.Scene());
+  const panelGroup = useRef<THREE.Group>(new THREE.Group());
+  // Per-cover slot card + soft shadow, drawn in the panel pass (index-matched to meshes)
+  const slotDecor = useRef<{ card: THREE.Mesh | null; shadow: THREE.Mesh | null }[]>([]);
   const meshes = useRef<THREE.Mesh[]>([]);
   const selectedRef = useRef<THREE.Mesh | null>(null);
   const urls = useRef<string[]>([]);
@@ -76,24 +86,45 @@ const GameShelf: React.FC<GameShelfProps> = ({
   const bounds = useRef({ min: -10, max: 10 });
   const currentCenterIdx = useRef<number | null>(null);
   const hasPlayedBackground = useRef<boolean>(false);
-  const padLeftRef = useRef<number>(0); // Store padLeft for use in selectMesh
+  // Rendered cover width and the panel's left/right edges (shelf-local world units)
+  const layoutMetrics = useRef({ itemW: 1, panelLeft: 0, panelRight: 0 });
+  const panelRef = useRef<THREE.Mesh | null>(null);
+  const cameraTargetZ = useRef(8); // the camera eases toward this (set per layout)
 
   // Animation and layout constants from legacy
   const BREATHE_DISTANCE = SELECTOR.BREATHE_DISTANCE;
-  const PAN_DAMPING = SELECTOR.PAN_DAMPING;
+  const PAN_SPEED = SELECTOR.PAN_SPEED;
   const GRID_ANIM_DURATION = SELECTOR.GRID_ANIM_DURATION;
   const GRID_ANIM_HEIGHT = SELECTOR.GRID_ANIM_HEIGHT;
 
-  // ⚙️ MANUAL STARTING POSITION KNOBS ⚙️
-  // Adjust these values to move the first game's starting position:
-  // 0 = first game at left edge
-  // positive values = move games to the right
-  // negative values = move games to the left
-  const STARTING_POSITION_OFFSET_1_ROW = -10; // For single row mode
-  const STARTING_POSITION_OFFSET_2_ROW = -20; // For double row mode (separate offset) 
+  // Half of the visible width (world units) at the covers' depth
+  const viewHalfWidth = () => {
+    const cam = camera.current;
+    // Uses the layout's target zoom, so scroll bounds are right even while the camera eases
+    return Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * cameraTargetZ.current * cam.aspect;
+  };
+
+  // Scroll range: the panel's left edge sits just inside the screen at the start and its
+  // right edge at the end. A panel that fits stays left-aligned, like the Switch home menu.
+  const updateBounds = () => {
+    if (!camera.current || !renderer.current) return;
+    const half = viewHalfWidth();
+    const gap = SELECTOR.PANEL_SCREEN_GAP_PX * (2 * half / Math.max(1, renderer.current.domElement.clientWidth));
+    const { panelLeft, panelRight } = layoutMetrics.current;
+    const max = -half + gap - panelLeft;
+    const min = Math.min(max, half - gap - panelRight);
+    bounds.current = { min, max };
+  };
+
+  // Switch-style follow: keep the selection centred on screen. The scroll bounds (the
+  // panel's ends) stop it, so near the start or end the selector walks to the edge instead.
+  const scrollIntoView = (mesh: THREE.Mesh) => {
+    const x = (mesh.userData.layoutX as number | undefined) ?? mesh.position.x;
+    shelfTargetX.current = clamp(-x, bounds.current.min, bounds.current.max);
+  };
 
   // Track row changes for animation
-  const prevRows = useRef<1 | 2>(rows);
+  const prevRows = useRef<ShelfRows>(rows);
   const clock = useRef<THREE.Clock>(new THREE.Clock());
   
   // Movement tracking for command bar visibility
@@ -133,81 +164,30 @@ const GameShelf: React.FC<GameShelfProps> = ({
     const outline = mesh.userData.outline as THREE.Object3D;
     if (outline) outline.visible = true;
     
-    // Enhanced auto-centering logic to prevent white space on the left
     const currentMeshIndex = meshes.current.indexOf(mesh);
-    const playableGames = meshes.current.filter(m => !m.userData.isAdd);
-    const gameIndex = playableGames.indexOf(mesh);
-    
-    let shouldCenter = true; // Default to centering
-    
-    // Apply centering logic based on row mode and actual layout position
-    if (rows === 1) {
-      // Don't center the first two games to prevent white space on the left
-      // User requirement: "centrering should take effefct after teh second game object"
-      if (gameIndex <= 1) {
-        shouldCenter = false;
-      }
-    } else if (rows === 2) {
-      // For double row mode with column-major layout, calculate which column the game is in
-      // Don't center games in the first two columns (columns 0 and 1)
-      const gameColumn = Math.floor(gameIndex / rows); // Column index based on game position
-      if (gameColumn <= 1) {
-        shouldCenter = false;
-      }
-    }
-    
-    console.log('GameShelf Debug:', {
-      gameIndex,
-      rows,
-      shouldCenter,
-      navigationDirection,
-      gameName: mesh.userData.game?.name || 'Unknown',
-      gameColumn: rows === 2 ? Math.floor(gameIndex / rows) : 'N/A',
-      meshPositionX: mesh.position.x,
-      currentShelfX: shelf.current.position.x,
-      willSetTargetTo: shouldCenter ? (-mesh.position.x) : 'no change',
-      debugInfo: `Mode: ${rows}-row, Game: ${gameIndex}, Column: ${rows === 2 ? Math.floor(gameIndex / rows) : 'N/A'}, Should center: ${shouldCenter}`
-    });
-    
-    if (shouldCenter) {
-      // Set target for smooth animation to center the selected game
-      const targetX = -mesh.position.x;
-      shelfTargetX.current = clamp(targetX, bounds.current.min, bounds.current.max); // Use proper bounds
-    } else {
-      // Don't center - keep the shelf at its current position
-      console.log('Not centering - keeping shelf position at:', shelf.current.position.x);
-      // For the first games, maintain the manual starting position instead of resetting to 0
-      const currentOffset = rows === 1 ? STARTING_POSITION_OFFSET_1_ROW : STARTING_POSITION_OFFSET_2_ROW;
-      const manualStartPosition = -padLeftRef.current + currentOffset;
-      
-      // Only reset if we're scrolled past the manual starting position to the left
-      if (shelf.current.position.x < manualStartPosition) {
-        shelfTargetX.current = manualStartPosition; // Reset to manual starting position
-        console.log('Resetting shelf target to manual starting position:', manualStartPosition);
-      }
-      // Otherwise, keep the current target (don't change shelfTargetX.current)
-    }
-    
+    scrollIntoView(mesh);
+
     // Update center index and notify parent
     currentCenterIdx.current = currentMeshIndex;
     
     // Convert mesh index to game index for parent component
-    // Only call onSelect for regular games, not add button
+    // Games report their index; the "+" slot reports separately so it can't become a game
     if (!mesh.userData.isAdd) {
       // The mesh index corresponds directly to the game index since games come first in the array
       onSelect?.(currentMeshIndex); // This is the game index
+    } else {
+      onAddSelected?.();
     }
     
     if (playSound) SoundManager.playUISelect();
-    
-    // Update position for hover hints
-    updateSelectedGamePosition();
-    
+
+    // Hint position is refreshed by the render loop once the shelf settles
+
     // Show command bar after a short delay (simple and reliable)
     commandBarTimer.current = window.setTimeout(() => {
       onMovementChange?.(false); // Show command bar
     }, 200); // Quick but smooth timing
-    
+
     // Reset hints for new selection (after position is updated)
     setTimeout(() => {
       onHintsChange?.(true);
@@ -230,7 +210,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
     screenPosition.project(camera.current);
 
     // Convert normalized device coordinates to screen pixels
-    const rect = container.current.getBoundingClientRect();
+    const rect = renderer.current.domElement.getBoundingClientRect();
     const x = (screenPosition.x * 0.5 + 0.5) * rect.width + rect.left;
     const y = (screenPosition.y * -0.5 + 0.5) * rect.height + rect.top;
 
@@ -249,6 +229,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
     pxPerWorld,
     revealWorld,
     bounds,
+    shelfTargetX,
     currentCenterIdx,
     rows,
     selectMesh,
@@ -270,23 +251,25 @@ const GameShelf: React.FC<GameShelfProps> = ({
     // Color pipeline setup
     (renderer.current as any).outputColorSpace = THREE.SRGBColorSpace;
     renderer.current.toneMapping = THREE.NoToneMapping;
-    renderer.current.setPixelRatio(window.devicePixelRatio);
-    
+    renderer.current.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
     const containerEl = container.current;
-    const width = containerEl.clientWidth;
-    const height = containerEl.clientHeight;
-    
-    // Fix initial aspect ratio
-    camera.current.aspect = width / height;
-    camera.current.updateProjectionMatrix();
-    
-    renderer.current.setSize(width, height);
     renderer.current.setClearColor(0x000000, 0); // Transparent background
+    const { top, side, radius } = SHELF_VIEWPORT;
+    Object.assign(renderer.current.domElement.style, {
+      position: 'absolute',
+      top: `${top}px`,
+      left: `${side}px`,
+      display: 'block',
+      borderRadius: `0 0 ${radius}px ${radius}px`, // clip covers to the panel's shape
+    });
     containerEl.appendChild(renderer.current.domElement);
 
     // Create shelf group
     shelf.current = new THREE.Group();
     scene.current.add(shelf.current);
+    panelScene.current.add(panelGroup.current);
+    renderer.current.autoClear = false;
 
     // Position camera properly
     camera.current.position.set(0, 0, 8);
@@ -295,10 +278,30 @@ const GameShelf: React.FC<GameShelfProps> = ({
     // Attach pointer and keyboard controls
     const cleanupControls = attach();
 
+    // Keep canvas, camera and scroll bounds in sync with the shelf's grid cell
+    const handleResize = () => {
+      const width = containerEl.clientWidth - SHELF_VIEWPORT.side * 2;
+      const height = containerEl.clientHeight - SHELF_VIEWPORT.top - SHELF_VIEWPORT.bottom;
+      if (!width || !height) return;
+      camera.current.aspect = width / height;
+      camera.current.updateProjectionMatrix();
+      renderer.current.setSize(width, height);
+      updateBounds();
+      shelfTargetX.current = clamp(shelfTargetX.current, bounds.current.min, bounds.current.max);
+      if (selectedRef.current) scrollIntoView(selectedRef.current);
+      updateSelectedGamePosition();
+    };
+    handleResize();
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(containerEl);
+
     // Basic animation loop with proper legacy animations
+    let frameId = 0;
+    let shelfSettled = true;
     const animate = () => {
-      requestAnimationFrame(animate);
-      const t = clock.current.getElapsedTime();
+      frameId = requestAnimationFrame(animate);
+      const dt = Math.min(clock.current.getDelta(), 0.1);
+      const t = clock.current.elapsedTime;
       
       // 1. Grid Transition Animation
       meshes.current.forEach((m) => {
@@ -320,11 +323,9 @@ const GameShelf: React.FC<GameShelfProps> = ({
             
             // RESTORE SELECTION STATE after grid transition completes
             if (m === selectedRef.current) {
-              console.log('🎯 Grid transition complete - restoring selection for game', meshes.current.indexOf(m));
               const outline = m.userData.outline as THREE.Object3D;
               if (outline) {
                 outline.visible = true;
-                console.log('✅ Selected game outline restored and made visible after grid transition');
               }
               
               // Show command bar after grid transition completes
@@ -341,7 +342,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
 
       // 1b. Animate outline during grid transitions (critical for selector tracking)
       meshes.current.forEach((m) => {
-        if (!m.userData.isAdd && m.userData.outline) {
+        if (m.userData.outline) {
           const outlineGroup = m.userData.outline as THREE.Group;
           const anim = outlineGroup.userData.gridAnimation;
           if (anim?.isTransitioning) {
@@ -356,54 +357,112 @@ const GameShelf: React.FC<GameShelfProps> = ({
               // SHOW SELECTED OUTLINE after grid transition completes
               if (m === selectedRef.current) {
                 outlineGroup.visible = true;
-                console.log('🔲 Selected game outline reappeared after grid transition complete');
               }
             }
           }
         }
       });
 
+      // 1c. While covers fly to a new layout, the panel stretches to wrap wherever they
+      // actually are (so nothing pokes outside it), then settles on its exact size
+      const panel = panelRef.current;
+      if (panel?.userData.fit) {
+        const { padX, padY, margin, geoW, geoH, centerX } = panel.userData.fit;
+        if (meshes.current.some(m => m.userData.gridAnimation)) {
+          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+          meshes.current.forEach(m => {
+            const hw = ((m.userData.actualWidth as number) * m.scale.x) / 2;
+            const hh = ((m.userData.actualHeight as number) * m.scale.y) / 2;
+            minX = Math.min(minX, m.position.x - hw); maxX = Math.max(maxX, m.position.x + hw);
+            minY = Math.min(minY, m.position.y - hh); maxY = Math.max(maxY, m.position.y + hh);
+          });
+          panel.position.set((minX + maxX) / 2, (minY + maxY) / 2, 0);
+          panel.scale.set((maxX - minX + 2 * (padX + margin)) / geoW, (maxY - minY + 2 * (padY + margin)) / geoH, 1);
+        } else if (Math.abs(panel.scale.x - 1) > 1e-4 || Math.abs(panel.scale.y - 1) > 1e-4) {
+          const k = 1 - Math.exp(-dt * 12);
+          panel.position.x += (centerX - panel.position.x) * k;
+          panel.position.y += (0 - panel.position.y) * k;
+          panel.scale.x += (1 - panel.scale.x) * k;
+          panel.scale.y += (1 - panel.scale.y) * k;
+        }
+      }
+
+      // 1d. Camera eases to the layout's zoom instead of jumping
+      const zDiff = cameraTargetZ.current - camera.current.position.z;
+      if (Math.abs(zDiff) > 1e-3) camera.current.position.z += zDiff * (1 - Math.exp(-dt * 7));
+
       // 2. Hover Animation (guarded to not run during transition)
       meshes.current.forEach(m => {
         if (m.userData.gridAnimation?.isTransitioning) return; // Skip if transitioning
+        if (m.userData.isAdd) { m.position.y = m.userData.homeY || 0; return; } // the "+" slot doesn't float
         const ph = m.userData.ph as number;
         m.position.y = (m.userData.homeY || 0) +
           Math.sin(t * 1.2 + ph) * (SELECTOR.HOVER_BASE * LAYOUT[rows].scale);
+
+        // Focus: the selected cover eases toward the camera and grows a touch
+        const focus = (m.userData.focus = (m.userData.focus ?? 0) +
+          ((m === selectedRef.current ? 1 : 0) - (m.userData.focus ?? 0)) * (1 - Math.exp(-dt * 10)));
+        const base = LAYOUT[rows].scale;
+        m.scale.setScalar(base * (1 + SELECTOR.FOCUS_GROW * focus));
+        m.position.z = focus * (m.userData.actualHeight as number) * base * SELECTOR.FOCUS_FORWARD;
+      });
+
+      // 2b. Shadows follow each cover's bob and narrow as it spins; the empty slot stays put
+      slotDecor.current.forEach(({ card, shadow }, i) => {
+        const m = meshes.current[i];
+        if (!m) return;
+        const w = (m.userData.actualWidth as number) * m.scale.x;
+        const h = (m.userData.actualHeight as number) * m.scale.y;
+        if (card) {
+          card.position.set(m.position.x, m.position.y, 0);
+          card.scale.set(w, h, 1);
+        }
+        if (shadow) {
+          // A lifted (selected) cover is further from the panel: its shadow drops a bit more
+          const lift = m.userData.focus ?? 0;
+          const turn = Math.max(0.15, Math.abs(Math.cos(m.rotation.y)));
+          shadow.position.set(m.position.x, m.position.y - h * (0.022 + 0.03 * lift), 0);
+          shadow.scale.set(w * SHADOW_SPREAD * turn * (1 + 0.03 * lift), h * SHADOW_SPREAD * (1 + 0.03 * lift), 1);
+        }
       });
 
       // 3. Selector Breathing Animation
       if (selectedRef.current && selectedRef.current.userData.outline) {
-        const g = selectedRef.current.userData.outline as THREE.Group;
-        const pulse = 1 + Math.sin(t * 4.8) * BREATHE_DISTANCE;
+        const sel = selectedRef.current;
+        const g = sel.userData.outline as THREE.Group;
+        // Brackets breathe, and follow the focused cover forward
+        const pulse = (1 + Math.sin(t * 4.8) * BREATHE_DISTANCE) * (1 + SELECTOR.FOCUS_GROW * (sel.userData.focus ?? 0));
         g.scale.set(pulse, pulse, pulse);
+        if (!g.userData.gridAnimation) g.position.z = (sel.userData.actualDepth as number) / 2 + 0.01 + sel.position.z;
       }
 
-      // 4. Smooth Shelf Panning (restored for better UX)
+      // 4. Smooth Shelf Panning: exponential ease, same feel at any frame rate
       if (shelf.current) {
-        const currentX = shelf.current.position.x;
-        const targetX = shelfTargetX.current;
-        const diff = targetX - currentX;
+        const diff = shelfTargetX.current - shelf.current.position.x;
         if (Math.abs(diff) > 0.001) {
-          shelf.current.position.x += diff * PAN_DAMPING;
-          // Update hover hint position when shelf moves
-          updateSelectedGamePosition();
+          shelf.current.position.x += diff * (1 - Math.exp(-dt * PAN_SPEED));
+          shelfSettled = false;
         } else {
-          shelf.current.position.x = targetX;
+          shelf.current.position.x = shelfTargetX.current;
+          if (!shelfSettled) {
+            // Re-anchor the hover hint once, not every frame (avoids a React render per frame)
+            shelfSettled = true;
+            updateSelectedGamePosition();
+          }
         }
       }
-      
+
+      // Panel pass first, then the covers on top
+      panelGroup.current.position.copy(shelf.current.position);
+      renderer.current.clear();
+      renderer.current.render(panelScene.current, camera.current);
       renderer.current.render(scene.current, camera.current);
     };
     animate();
 
-    // Size the background container
-    if (backgroundRef.current) {
-      const bgWidth = width * 0.8;
-      const bgLeft = width * 0.1;
-      backgroundRef.current.setSize(bgWidth, bgLeft);
-    }
-
     return () => {
+      cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
       cleanupControls(); // Clean up pointer and keyboard controls
       if (commandBarTimer.current) {
         clearTimeout(commandBarTimer.current);
@@ -415,35 +474,6 @@ const GameShelf: React.FC<GameShelfProps> = ({
     };
   }, []);
 
-  // Handle window resize with proper aspect ratio
-  useEffect(() => {
-    if (!container.current || !renderer.current || !camera.current) return;
-
-    const handleResize = () => {
-      const containerEl = container.current!;
-      const width = containerEl.clientWidth;
-      const height = containerEl.clientHeight;
-      
-      // Fix aspect ratio calculation
-      camera.current.aspect = width / height;
-      camera.current.updateProjectionMatrix();
-      renderer.current.setSize(width, height);
-      
-      // Update background size
-      if (backgroundRef.current) {
-        const bgWidth = width * 0.8;
-        const bgLeft = width * 0.1;
-        backgroundRef.current.setSize(bgWidth, bgLeft);
-      }
-    };
-
-    // Call resize immediately to fix initial stretching
-    handleResize();
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   // Update hover hint position when window resizes or game changes
   useEffect(() => {
     updateSelectedGamePosition();
@@ -453,8 +483,6 @@ const GameShelf: React.FC<GameShelfProps> = ({
   useEffect(() => {
     if (!renderer.current || !shelf.current) return;
 
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin('anonymous');
 
     // Calculate box dimensions based on props
     const _BASE_W = FRONT_3DS * (frontWidthUnits / FRONT_3DS);
@@ -470,24 +498,23 @@ const GameShelf: React.FC<GameShelfProps> = ({
     
     // Create or update meshes for each texture
     textures.forEach((url, i) => {
-      console.log(`[GameShelf] Processing item ${i}: url="${url}", isAdd=${url === ADD_MARKER}`);
       
       const scaleW = frontWidthUnits / FRONT_3DS;
       const scaleH = frontHeightUnits / (FULL_H_3DS * HEIGHT_RATIO_3DS);
       const scale = Math.min(scaleW, scaleH);
       
-      const boxW = FRONT_3DS * scale * WIDTH_FACTOR * mul;
-      const boxH = boxW * PANEL_RATIO;
-      const boxD = SPINE_3DS * scale * DEPTH_FACTOR * mul;
-      
       const isAdd = url === ADD_MARKER;
+      const coverW = FRONT_3DS * scale * WIDTH_FACTOR * mul;
+      // The empty slot is a small square, about 70% of a cover's height
+      const boxW = isAdd ? coverW * PANEL_RATIO * 0.7 : coverW;
+      const boxH = isAdd ? boxW : coverW * PANEL_RATIO;
+      const boxD = SPINE_3DS * scale * DEPTH_FACTOR * mul;
       const bevelRadius = Math.min(boxW, boxH) * 0.02;
       
       let mesh = meshes.current[i];
       
       // Force mesh recreation if the mesh type changed (add -> game or game -> add)
       if (mesh && mesh.userData.isAdd !== isAdd) {
-        console.log(`[GameShelf] Mesh type changed at index ${i}: ${mesh.userData.isAdd ? 'ADD' : 'GAME'} -> ${isAdd ? 'ADD' : 'GAME'}, recreating mesh`);
         shelf.current.remove(mesh);
         mesh.geometry.dispose();
         if (Array.isArray(mesh.material)) {
@@ -502,7 +529,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
       if (!mesh) {
         // Create new mesh
         const geo = isAdd
-          ? new RoundedBoxGeometry(boxW * 0.8, boxW * 0.8, boxD * 0.02, 8, bevelRadius)
+          ? new THREE.BoxGeometry(boxW, boxH, boxD * 0.1) // empty slot (invisible hit box)
           : new RoundedBoxGeometry(boxW, boxH, boxD, 16, bevelRadius);
         
         mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff }));
@@ -511,76 +538,45 @@ const GameShelf: React.FC<GameShelfProps> = ({
         shelf.current.add(mesh);
         meshes.current[i] = mesh;
         
-        // Add outline for non-add meshes
-        if (!isAdd) {
-          attachOutline(mesh, boxW, boxH, boxD, rows);
-        }
+        // Selector brackets (the empty slot gets them too, like the 3DS)
+        attachOutline(mesh, boxW, boxH, boxD, rows);
       }
       
       // Load texture for non-add meshes
-      if (!isAdd && mesh.userData.url !== url) {
-        console.log(`[GameShelf] Loading texture for GAME mesh ${i}: url="${url}"`);
-        loader.load(
-          url,
-          (tex) => {
-            mesh!.material = buildMats3DS(tex, renderer.current);
-            mesh!.userData.url = url;
-            console.log(`[GameShelf] Successfully loaded texture for mesh ${i}`);
-          },
-          undefined,
-          (error) => {
+      if (!isAdd && mesh.userData.url !== url && mesh.userData.loadingUrl !== url) {
+        const target = mesh;
+        target.userData.loadingUrl = url; // don't start a second load if this effect re-runs
+        loadCoverTexture(url)
+          .then((tex) => {
+            if (target.userData.loadingUrl !== url) return; // superseded by a newer cover
+            target.material = buildMats3DS(tex, renderer.current);
+            target.userData.url = url;
+            // Upload now (at load time) rather than the first time it scrolls on screen,
+            // which used to freeze scrolling while each big cover hit the GPU
+            const map = (target.material as THREE.MeshBasicMaterial[]).find(m => m.map)?.map;
+            if (map) renderer.current.initTexture(map);
+          })
+          .catch((error) => {
             console.warn('Texture loading failed:', url, error);
             // Use fallback gray material
-            mesh!.material = new THREE.MeshBasicMaterial({ color: 0x444444 });
-          }
-        );
-      } else if (isAdd && (!mesh.userData.plusBuilt || mesh.userData.themeText !== themeCtx.theme.text)) {
-        console.log(`[GameShelf] Creating plus symbol for ADD mesh ${i}`);
-        // Create "+" symbol for add button (recreate if theme changed)
-        
-        // Clear existing plus if it exists
-        if (mesh.userData.plusBuilt) {
-          const existingPlus = mesh.children.find(child => child.userData.isPlus);
-          if (existingPlus) {
-            mesh.remove(existingPlus);
-          }
-        }
-        
-        const invisible = new THREE.MeshBasicMaterial({
-          transparent: true,
-          opacity: 0,
-        });
-        mesh.material = Array(6).fill(invisible);
-        
-        // Add plus sign geometry
-        const barT = boxW * 0.10;
-        const barL = boxW * 0.46;
-        const barD = boxD * 0.35;
-        const r = barT * 0.9;
-        
-        const barGeoH = new RoundedBoxGeometry(barL, barT, barD, 6, r);
-        const barGeoV = new RoundedBoxGeometry(barT, barL, barD, 6, r);
-        // Always use orange for consistent plus sign color across themes
-        const plusColor = 0xffc14d; // Orange color for both light and dark themes
-        const barMat = new THREE.MeshBasicMaterial({ color: plusColor });
-        
-        const barH = new THREE.Mesh(barGeoH, barMat);
-        const barV = new THREE.Mesh(barGeoV, barMat);
-        const plusGrp = new THREE.Group();
-        plusGrp.userData.isPlus = true;
-        plusGrp.add(barH);
-        plusGrp.add(barV);
-        
-        barH.position.z = barV.position.z = boxD * 0.55;
-        mesh.add(plusGrp);
+            target.material = new THREE.MeshBasicMaterial({ color: 0x444444 });
+          });
+      } else if (isAdd && !mesh.userData.plusBuilt) {
+        // The "+" slot is drawn as a card in the panel pass (see slot decor below);
+        // this invisible box just gives it something to click, select and bracket
+        mesh.material = new THREE.MeshBasicMaterial({ visible: false });
         mesh.userData.plusBuilt = true;
-        mesh.userData.themeText = themeCtx.theme.text; // Track current theme
       }
       
       // Store dimensions
-      mesh.userData.actualWidth = boxW;
-      mesh.userData.actualHeight = boxH;
-      mesh.userData.actualDepth = isAdd ? boxD * 0.1 : boxD;
+      // Record the size the geometry was actually built with. (Using this layout's boxW here
+      // overstated covers by the scale ratio after a layout switch, inflating shadows and gaps.)
+      // (Measured from the bounds: RoundedBoxGeometry reports 1×1×1 in .parameters.)
+      if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+      const size = mesh.geometry.boundingBox!.getSize(new THREE.Vector3());
+      mesh.userData.actualWidth = size.x;
+      mesh.userData.actualHeight = size.y;
+      mesh.userData.actualDepth = size.z;
     });
 
     // Remove extra meshes
@@ -598,29 +594,81 @@ const GameShelf: React.FC<GameShelfProps> = ({
     // Layout meshes using proper legacy logic
     const all = meshes.current;
     
-    // Use legacy spacing configuration
+    // Space covers by their rendered size (geometry size × layout scale), so gaps
+    // stay even and leave room for the selector brackets
     const cfg = LAYOUT[rows];
-    const gapX = itemW * cfg.gapX;
-    const gapY = itemH * cfg.gapY;
-    const padTop = itemH * cfg.padTop;
-    const padBottom = itemH * cfg.padBottom;
-    const padLeft = itemW * cfg.padLeft;
-    const padRight = itemW * cfg.padRight;
-
-    // Store padLeft for use in selectMesh function
-    padLeftRef.current = padLeft;
+    const sample = all.find(m => !m.userData.isAdd);
+    const renderedW = ((sample?.userData.actualWidth as number) ?? itemW) * cfg.scale;
+    const renderedH = ((sample?.userData.actualHeight as number) ?? itemH) * cfg.scale;
+    const stepX = renderedW * (1 + cfg.gapX);
+    const stepY = renderedH * (1 + cfg.gapY);
 
     const cols = Math.ceil(all.length / rows);
     layoutInfo.current.cols = cols;
-    const rowW = cols * itemW + (cols - 1) * gapX + padLeft + padRight;
-    
-    // Calculate bounds for left-anchored scrolling: 
-    // - Max bound is -padLeft (first game at left edge)
-    // - Min bound allows scrolling left to see all games
-    const totalWidth = (cols - 1) * (itemW + gapX);
-    bounds.current.min = -totalWidth - padLeft; // Can scroll left to see all games
-    bounds.current.max = -padLeft; // First game positioned at left edge
-    
+
+    // Panel wraps every column and row with a little padding
+    const padX = renderedW * SELECTOR.PANEL_PAD[rows].x;
+    const padY = renderedH * SELECTOR.PANEL_PAD[rows].y;
+    const contentW = (cols - 1) * stepX + renderedW;
+    const contentH = (rows - 1) * stepY + renderedH;
+    const panelSize = {
+      width: contentW + padX * 2,
+      height: contentH + padY * 2,
+      radius: Math.min(renderedW, renderedH) * 0.2,
+    };
+    const panelCenterX = ((cols - 1) * stepX) / 2;
+    layoutMetrics.current = {
+      itemW: renderedW,
+      panelLeft: panelCenterX - panelSize.width / 2,
+      panelRight: panelCenterX + panelSize.width / 2,
+    };
+
+    // Zoom so the panel fills most of the view's height, whatever the layout
+    const fovFactor = 2 * Math.tan(THREE.MathUtils.degToRad(camera.current.fov / 2));
+    cameraTargetZ.current = panelSize.height / (SELECTOR.PANEL_FILL * fovFactor);
+    if (!panelRef.current) camera.current.position.z = cameraTargetZ.current; // first layout: no ease
+    updateBounds();
+
+    // Rebuild the panel at its new size. During a layout switch the render loop stretches
+    // it around the moving covers (see 1c), using these numbers.
+    const oldPanel = panelRef.current;
+    const panel = buildPanelMesh(panelSize, themeCtx.mode);
+    const panelGeo = (panel.geometry as THREE.PlaneGeometry).parameters;
+    panel.position.set(panelCenterX, 0, 0);
+    panel.userData.fit = {
+      padX, padY,
+      margin: (panelGeo.width - panelSize.width) / 2,
+      geoW: panelGeo.width,
+      geoH: panelGeo.height,
+      centerX: panelCenterX,
+    };
+    if (oldPanel) {
+      panelGroup.current.remove(oldPanel);
+      disposePanelMesh(oldPanel);
+    }
+    panelGroup.current.add(panel);
+    panelRef.current = panel;
+
+    // Each cover casts a soft shadow onto the panel; the empty slot is pressed into it instead
+    slotDecor.current.forEach(({ card, shadow }) => {
+      [card, shadow].forEach((d) => {
+        if (!d) return;
+        panelGroup.current.remove(d);
+        (d.material as THREE.Material).dispose();
+      });
+    });
+    const aspect = renderedW / renderedH;
+    slotDecor.current = all.map((m) => {
+      if (m.userData.isAdd) {
+        const card = makeDecalMesh(getEmptySlotTexture(themeCtx.mode), 0);
+        panelGroup.current.add(card);
+        return { card, shadow: null };
+      }
+      const shadow = makeDecalMesh(getShadowTexture(themeCtx.mode, aspect), 1);
+      panelGroup.current.add(shadow);
+      return { card: null, shadow };
+    });
+
     // Check for row switch to trigger animation
     const rowSwitch = prevRows.current !== rows;
     prevRows.current = rows;
@@ -628,7 +676,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
     // Recreate all selectors when layout changes to apply new SELECTOR_FRAME_SCALE
     if (rowSwitch) {
       all.forEach((mesh) => {
-        if (!mesh.userData.isAdd && mesh.userData.outline) {
+        if (mesh.userData.outline) {
           // Remove old selector
           const oldOutline = mesh.userData.outline as THREE.Group;
           shelf.current.remove(oldOutline);
@@ -648,8 +696,8 @@ const GameShelf: React.FC<GameShelfProps> = ({
       let r: number, c: number;
       
       // Improved layout logic for double row mode
-      if (rows === 2) {
-        // For 2 rows, use column-major ordering: fill columns top to bottom
+      if (rows > 1) {
+        // For 2+ rows, use column-major ordering: fill columns top to bottom
         // This makes the first game appear at top-left (more intuitive)
         c = Math.floor(i / rows); // Column index
         r = i % rows; // Row index (0 = top, 1 = bottom)
@@ -659,14 +707,11 @@ const GameShelf: React.FC<GameShelfProps> = ({
         c = i % cols;
       }
       
-      // Left-anchored positioning: first column starts at x=0, subsequent columns extend rightward
-      const x = c * (itemW + gapX) + padLeft;
-      const yOffset = (padTop - padBottom) / 2;
-      const y = ((rows - 1) / 2 - r) * (itemH + gapY) - yOffset;
-      
-      // Debug logging to see the layout
-      console.log(`Item ${i} (${m.userData.isAdd ? 'ADD' : 'GAME'}): r=${r}, c=${c}, x=${x.toFixed(2)}, y=${y.toFixed(2)}`);
-      
+      // Columns extend rightward from x=0; rows are centred vertically
+      const x = c * stepX;
+      const y = ((rows - 1) / 2 - r) * stepY;
+      m.userData.layoutX = x;
+
       return {
         position: new THREE.Vector3(x, y, 0),
         scale: new THREE.Vector3(LAYOUT[rows].scale, LAYOUT[rows].scale, LAYOUT[rows].scale),
@@ -686,26 +731,13 @@ const GameShelf: React.FC<GameShelfProps> = ({
       }
       onMovementChange?.(true);
       
-      console.log('🔄 Starting grid morph transition from', prevRows.current, 'to', rows, 'rows');
-      console.log('📌 Selected game index during transition:', selectedGameIndex);
       
-      // Calculate where the selected game should end up and adjust shelf to keep it in view
+      // Keep the selected game roughly where it was on screen, then make sure it's in view
       if (selectedGame && selectedGameIndex >= 0) {
         const selectedGameCurrentScreenX = selectedGame.position.x + currentShelfX;
         const selectedGameNewPos = layoutTargets[selectedGameIndex].position.x;
-        
-        // Calculate shelf adjustment to keep selected game roughly in the same screen position
-        const newShelfX = selectedGameCurrentScreenX - selectedGameNewPos;
-        const clampedShelfX = clamp(newShelfX, bounds.current.min, bounds.current.max);
-        
-        // Update shelf target to maintain view context
-        shelfTargetX.current = clampedShelfX;
-        
-        console.log('📍 Adjusting shelf to maintain selected game view:', {
-          selectedGameScreenX: selectedGameCurrentScreenX.toFixed(2),
-          selectedGameNewPos: selectedGameNewPos.toFixed(2),
-          newShelfTarget: clampedShelfX.toFixed(2)
-        });
+        shelfTargetX.current = clamp(selectedGameCurrentScreenX - selectedGameNewPos, bounds.current.min, bounds.current.max);
+        scrollIntoView(selectedGame);
       }
       
       // Trigger the choreographed animation from current positions to new layout positions
@@ -729,21 +761,13 @@ const GameShelf: React.FC<GameShelfProps> = ({
           direction: (i % 2 === 0) ? 1 : -1, // Alternating up/down motion
         };
         
-        console.log(`🎬 Game ${i} morphing:`, {
-          from: { x: currentPos.x.toFixed(2), y: currentPos.y.toFixed(2) },
-          to: { x: targetPos.x.toFixed(2), y: targetPos.y.toFixed(2) },
-          scaleFrom: currentScale.x.toFixed(3),
-          scaleTo: targetScale.x.toFixed(3),
-          isSelected: m === selectedGame
-        });
         
         // HIDE SELECTOR during transition - cleaner approach
-        if (!m.userData.isAdd && m.userData.outline) {
+        if (m.userData.outline) {
           const outlineGroup = m.userData.outline as THREE.Group;
           
           // Hide ALL outlines during grid transition for cleaner animation
           outlineGroup.visible = false;
-          console.log('🔲 Hiding outline during grid transition for game', i);
           
           // Still need to animate outline position but keep it hidden
           outlineGroup.userData.gridAnimation = {
@@ -756,33 +780,6 @@ const GameShelf: React.FC<GameShelfProps> = ({
         }
       });
       
-      // IMPORTANT: Re-establish selection after layout targets are calculated
-      // This ensures the selection system knows where the selected game will be
-      if (selectedGame && selectedGameIndex >= 0) {
-        console.log('🔄 Selection will be restored for game', selectedGameIndex, 'after grid transition completes');
-        
-        // Fix centering bug: Reset shelf position if selected game shouldn't be centered in new layout
-        const playableGames = all.filter(m => !m.userData.isAdd);
-        const gameIndex = playableGames.indexOf(selectedGame);
-        let shouldBeCentered = true;
-        
-        if (rows === 1) {
-          if (gameIndex <= 1) shouldBeCentered = false;
-        } else if (rows === 2) {
-          const gameColumn = Math.floor(gameIndex / rows);
-          if (gameColumn <= 1) shouldBeCentered = false;
-        }
-        
-        if (!shouldBeCentered) {
-          // Reset to manual starting position for non-centered games
-          const currentOffset = rows === 1 ? STARTING_POSITION_OFFSET_1_ROW : STARTING_POSITION_OFFSET_2_ROW;
-          const manualStartPosition = -padLeft + currentOffset;
-          shelfTargetX.current = clamp(manualStartPosition, bounds.current.min, bounds.current.max);
-          console.log('🔄 Resetting shelf position to manual start for non-centered game:', manualStartPosition);
-        }
-        
-        // Don't show outline during transition - it will reappear when animation finishes
-      }
     } else {
       // Apply positions directly (no animation)
       all.forEach((m, i) => {
@@ -791,7 +788,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
         m.userData.homeY = layoutTargets[i].position.y;
         
         // Position outline if it exists
-        if (!m.userData.isAdd && m.userData.outline) {
+        if (m.userData.outline) {
           const outline = m.userData.outline as THREE.Group;
           outline.position.set(
             layoutTargets[i].position.x, 
@@ -803,29 +800,16 @@ const GameShelf: React.FC<GameShelfProps> = ({
       });
     }
 
-    // Update camera position for current layout
-    camera.current.position.z = BOX_H * (rows === 1 ? 4.0 : 6.8);
-    
-    // Auto-select first playable game if none selected and set target for smooth animation
+    // Auto-select the first game and start with the row at its left edge
     if (!selectedRef.current && all.length > 0) {
       const firstPlayable = all.find(m => !m.userData.isAdd);
       if (firstPlayable) {
+        shelf.current.position.x = shelfTargetX.current = bounds.current.max;
         selectMesh(firstPlayable, false, null); // Initial selection, no direction
-        
-        // 🔧 MANUAL POSITIONING: Use the knob to adjust starting position
-        const currentOffset = rows === 1 ? STARTING_POSITION_OFFSET_1_ROW : STARTING_POSITION_OFFSET_2_ROW;
-        const targetShelfX = -padLeft + currentOffset;
-        shelf.current.position.x = targetShelfX;
-        shelfTargetX.current = targetShelfX;
-        
-        console.log('🔧 Manual positioning with knob:', {
-          firstGamePosInShelf: firstPlayable.position.x,
-          padLeft: padLeft,
-          offset: currentOffset,
-          finalShelfPos: targetShelfX,
-          resultingGameScreenPos: firstPlayable.position.x + targetShelfX
-        });
       }
+    } else if (!rowSwitch) {
+      // Games added/removed: keep the shelf inside the new bounds
+      shelfTargetX.current = clamp(shelfTargetX.current, bounds.current.min, bounds.current.max);
     }
 
   }, [textures, rows, frontWidthUnits, frontHeightUnits, themeCtx.theme.text]);
@@ -836,7 +820,7 @@ const GameShelf: React.FC<GameShelfProps> = ({
     boxW: number,
     boxH: number,
     boxD: number,
-    layoutRows: 1 | 2,
+    layoutRows: ShelfRows,
     colour = 0xffc14d,
   ) => {
     if (mesh.userData.outline) return;
@@ -904,6 +888,12 @@ const GameShelf: React.FC<GameShelfProps> = ({
     mesh.userData.outline = group;
   };
 
+  // Column of the selected game vs. the last game's column (the parent re-renders on every selection)
+  const playable = meshes.current; // games plus the "+" slot at the end
+  const selectedIdx = selectedRef.current ? playable.indexOf(selectedRef.current) : 0;
+  const selectedCol = Math.floor(Math.max(0, selectedIdx) / rows);
+  const lastCol = Math.floor(Math.max(0, playable.length - 1) / rows);
+
   return (
     <div
       ref={container}
@@ -917,23 +907,23 @@ const GameShelf: React.FC<GameShelfProps> = ({
         zIndex: 0 
       }}
     >
-      {/* BackgroundContainer replaces the old shell div */}
-      <BackgroundContainer ref={backgroundRef} />
       
-      {/* Navigation buttons with proper controls integration */}
+      {/* Navigation buttons with proper controls integration; hidden when there's nothing further that way */}
       <NavigationButton
         direction="left"
+        className={selectedCol <= 0 ? 'is-hidden' : ''}
         onMouseDown={() => startHold({ x: -1, y: 0 })}
         onMouseUp={stopHold}
         onMouseLeave={stopHold}
-        size={72}
+        size={56}
       />
       <NavigationButton
         direction="right"
+        className={selectedCol >= lastCol ? 'is-hidden' : ''}
         onMouseDown={() => startHold({ x: 1, y: 0 })}
         onMouseUp={stopHold}
         onMouseLeave={stopHold}
-        size={72}
+        size={56}
       />
       
       {/* Hover Hints for game interaction guidance */}

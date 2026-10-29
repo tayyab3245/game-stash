@@ -1,60 +1,55 @@
 import React from 'react';
+import { GridMode } from './GridButton.logic';
 
 interface GridIconProps {
-  mode: 1 | 2 ;
-  filled?: boolean;
+  mode: GridMode;
   size?: number;
 }
 
-const GridIcon: React.FC<GridIconProps> = ({ mode, filled = false, size = 96 }) => {
-  /* inherit from parent (CommandBar) which now gets var(--text) */
-  const strokeColor = 'currentColor';
-  const fillColor   = filled ? 'currentColor' : 'transparent';
-  // Increase stroke width for more thickness
-  const strokeWidth = filled ? 2.2 : 2.5;
+type Box = { x: number; y: number; w: number; h: number; r: number };
 
+/**
+ * Four rounded tiles that morph between layouts:
+ *   1 → one big tile (all four stacked on top of each other)
+ *   2 → two wide tiles, one per shelf row
+ *   3 → a 2×2 grid (compact view)
+ * Every tile stays filled; CSS transitions on x/y/width/height do the morph.
+ */
+const GridIcon: React.FC<GridIconProps> = ({ mode, size = 48 }) => {
+  const pad = size * 0.1;
+  const gap = size * 0.12;
+  const full = size - pad * 2;
+  const half = (full - gap) / 2;
 
-  const spacingMap = {
-    1: { count: 1, spacing: 0, padding: 4 },
-    2: { count: 2, spacing: 6, padding: 4 },
+  const layouts: Record<GridMode, Box[]> = {
+    1: Array(4).fill({ x: pad, y: pad, w: full, h: full, r: full * 0.24 }),
+    2: [0, 0, 1, 1].map(row => ({ x: pad, y: pad + row * (half + gap), w: full, h: half, r: half * 0.32 })),
+    3: [0, 1, 2, 3].map(i => ({
+      x: pad + (i % 2) * (half + gap),
+      y: pad + Math.floor(i / 2) * (half + gap),
+      w: half,
+      h: half,
+      r: half * 0.32,
+    })),
   };
 
-
-  const { count, spacing, padding } = spacingMap[mode];
-  const totalSpacing = spacing * (count - 1);
-
-  const boxSize = (size - totalSpacing - padding * 2) / count;
-  const radius = mode === 2 ? boxSize * 0.15 : boxSize * 0.25;
-
-  const offset = padding;
-
-  const squares = Array.from({ length: count * count }, (_, i) => {
-    const x = i % count;
-    const y = Math.floor(i / count);
-    return {
-      x: offset + x * (boxSize + spacing),
-      y: offset + y * (boxSize + spacing),
-    };
-  });
-
   return (
-   <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} xmlns="http://www.w3.org/2000/svg">
-      {squares.map(({ x, y }, i) => (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} xmlns="http://www.w3.org/2000/svg">
+      {layouts[mode].map((b, i) => (
         <rect
           key={i}
-          x={x}
-          y={y}
-          width={boxSize}
-          height={boxSize}
-          rx={radius}
-          ry={radius}
-          fill={fillColor}
-          stroke={strokeColor}
-          strokeWidth={strokeWidth}
+          fill="currentColor"
           shapeRendering="geometricPrecision"
           style={{
-            transition: 'all 0.2s ease',
-          }}
+            x: b.x,
+            y: b.y,
+            width: b.w,
+            height: b.h,
+            rx: b.r,
+            ry: b.r,
+            // Springy overshoot, slightly staggered so the tiles "pop" apart
+            transition: `all 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 0.035}s`,
+          } as React.CSSProperties}
         />
       ))}
     </svg>

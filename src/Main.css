@@ -1,0 +1,151 @@
+/* App frame: top bar / shelf / command bar, each in its own grid row so nothing overlaps */
+.gs-app {
+  --gs-btn: clamp(52px, 5.2vw, 76px);
+  --gs-gap: clamp(8px, 0.9vw, 12px);
+  --gs-pad: clamp(10px, 1.3vw, 16px) clamp(12px, 1.6vw, 22px);
+  --gs-edge: 16px;
+
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+}
+
+/* Side clusters share the leftover width equally, so the title stays centred
+   and can only shrink (with an ellipsis), never slide under the buttons */
+.gs-topbar {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, auto) minmax(max-content, 1fr);
+  align-items: start;
+  column-gap: clamp(12px, 2vw, 32px);
+  position: relative;
+  z-index: 40; /* above the shelf's corner buttons, so pop-outs (volume meter) sit on top */
+}
+
+.gs-topbar > :nth-child(1) { justify-self: start; }
+.gs-topbar > :nth-child(2) { justify-self: center; }
+.gs-topbar > :nth-child(3) { justify-self: end; }
+
+.gs-shelf {
+  position: relative;
+  min-height: 0;
+  padding: clamp(10px, 2vh, 24px) 0;
+}
+
+.gs-shelf-inner {
+  position: relative;
+  height: 100%;
+}
+
+/* Top strip above the 3D view (SHELF_VIEWPORT.top): the help button sits on the right */
+.gs-help {
+  position: absolute;
+  top: 12px;
+  height: 44px;
+  z-index: 30;
+}
+
+.gs-help {
+  right: calc(var(--gs-edge) + 14px);
+}
+
+
+.gs-commandbar {
+  position: relative;
+  z-index: 20;
+}
+
+/* Nav arrows fade out when there's nothing further in that direction */
+.navigation-button {
+  transition: opacity 0.2s ease, transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+
+.navigation-button.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Icons scale with their buttons */
+.gs-topbar button > svg {
+  width: 62%;
+  height: 62%;
+}
+
+/* Night-mode sparkles beside the moon gently twinkle */
+.theme-toggle__sparkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: theme-sparkle-twinkle 2.4s ease-in-out infinite;
+}
+
+@keyframes theme-sparkle-twinkle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.65); opacity: 0.6; }
+}
+
+/* Grid icon gives a little squish-and-pop when the layout changes */
+.grid-button--changing svg {
+  animation: gs-grid-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes gs-grid-pop {
+  0% { transform: scale(0.85); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Backdrop: a loose grid of rounded squares (each nudged a little in place, size, tilt and
+   brightness), drifting diagonally with a gentle sway, like the 3DS home theme.
+   Moved with transforms (GPU-composited), so it never repaints the page. */
+.gs-app::before {
+  content: '';
+  position: absolute;
+  inset: -400px;
+  z-index: -1;
+  pointer-events: none;
+  background-size: 384px 384px;
+  animation: gs-backdrop-drift 56s linear infinite, gs-backdrop-sway 9s ease-in-out infinite alternate;
+  animation-composition: replace, add;
+  will-change: transform;
+}
+
+.gs-app[data-theme="light"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='384' height='384'%3E%3Crect x='10.6' y='8.5' width='75.9' height='75.9' rx='19.0' transform='rotate(1.0 48.5 46.4)' fill='%23ffffff' fill-opacity='0.425' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='101.3' y='15.2' width='73.8' height='73.8' rx='18.4' transform='rotate(-2.4 138.2 52.0)' fill='%23ffffff' fill-opacity='0.347' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='197.2' y='9.6' width='84.9' height='84.9' rx='21.2' transform='rotate(-0.2 239.6 52.0)' fill='%23ffffff' fill-opacity='0.428' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='300.2' y='15.0' width='74.8' height='74.8' rx='18.7' transform='rotate(0.2 337.6 52.4)' fill='%23ffffff' fill-opacity='0.448' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='2.2' y='106.6' width='81.1' height='81.1' rx='20.3' transform='rotate(0.9 42.8 147.1)' fill='%23ffffff' fill-opacity='0.360' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='111.7' y='107.0' width='73.4' height='73.4' rx='18.3' transform='rotate(2.2 148.4 143.7)' fill='%23ffffff' fill-opacity='0.476' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='204.3' y='102.0' width='81.6' height='81.6' rx='20.4' transform='rotate(3.0 245.1 142.7)' fill='%23ffffff' fill-opacity='0.389' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='298.4' y='97.1' width='84.2' height='84.2' rx='21.1' transform='rotate(-3.6 340.5 139.2)' fill='%23ffffff' fill-opacity='0.343' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='4.9' y='199.2' width='84.6' height='84.6' rx='21.1' transform='rotate(-2.0 47.2 241.5)' fill='%23ffffff' fill-opacity='0.401' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='103.4' y='202.2' width='77.6' height='77.6' rx='19.4' transform='rotate(0.8 142.2 241.0)' fill='%23ffffff' fill-opacity='0.481' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='204.6' y='203.7' width='81.2' height='81.2' rx='20.3' transform='rotate(4.9 245.1 244.3)' fill='%23ffffff' fill-opacity='0.434' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='302.8' y='208.1' width='75.0' height='75.0' rx='18.7' transform='rotate(4.0 340.3 245.6)' fill='%23ffffff' fill-opacity='0.414' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='3.8' y='299.2' width='81.6' height='81.6' rx='20.4' transform='rotate(0.7 44.5 340.0)' fill='%23ffffff' fill-opacity='0.357' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='111.4' y='305.0' width='73.8' height='73.8' rx='18.4' transform='rotate(-4.1 148.2 341.9)' fill='%23ffffff' fill-opacity='0.460' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='196.8' y='294.6' width='77.9' height='77.9' rx='19.5' transform='rotate(2.7 235.8 333.5)' fill='%23ffffff' fill-opacity='0.475' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3Crect x='300.6' y='293.8' width='73.5' height='73.5' rx='18.4' transform='rotate(2.2 337.4 330.5)' fill='%23ffffff' fill-opacity='0.366' stroke='%23000000' stroke-opacity='0.025' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+.gs-app[data-theme="dark"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='384' height='384'%3E%3Crect x='12.0' y='6.3' width='83.6' height='83.6' rx='20.9' transform='rotate(5.0 53.8 48.1)' fill='%23ffffff' fill-opacity='0.031' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='108.2' y='5.4' width='73.9' height='73.9' rx='18.5' transform='rotate(-3.0 145.2 42.4)' fill='%23ffffff' fill-opacity='0.033' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='195.7' y='2.3' width='80.3' height='80.3' rx='20.1' transform='rotate(3.7 235.9 42.5)' fill='%23ffffff' fill-opacity='0.031' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='298.5' y='4.3' width='84.5' height='84.5' rx='21.1' transform='rotate(-0.4 340.8 46.5)' fill='%23ffffff' fill-opacity='0.037' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='8.8' y='104.3' width='80.7' height='80.7' rx='20.2' transform='rotate(1.2 49.1 144.7)' fill='%23ffffff' fill-opacity='0.048' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='103.6' y='107.1' width='79.1' height='79.1' rx='19.8' transform='rotate(-2.6 143.2 146.6)' fill='%23ffffff' fill-opacity='0.030' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='197.9' y='102.2' width='84.7' height='84.7' rx='21.2' transform='rotate(-4.9 240.3 144.6)' fill='%23ffffff' fill-opacity='0.034' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='290.3' y='105.4' width='80.0' height='80.0' rx='20.0' transform='rotate(1.3 330.2 145.4)' fill='%23ffffff' fill-opacity='0.024' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='7.3' y='201.9' width='80.5' height='80.5' rx='20.1' transform='rotate(-1.5 47.6 242.2)' fill='%23ffffff' fill-opacity='0.042' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='97.3' y='193.8' width='81.9' height='81.9' rx='20.5' transform='rotate(1.8 138.3 234.7)' fill='%23ffffff' fill-opacity='0.049' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='201.5' y='203.1' width='76.0' height='76.0' rx='19.0' transform='rotate(-1.8 239.5 241.1)' fill='%23ffffff' fill-opacity='0.032' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='296.1' y='202.8' width='76.8' height='76.8' rx='19.2' transform='rotate(-2.0 334.4 241.1)' fill='%23ffffff' fill-opacity='0.033' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='1.2' y='295.7' width='82.3' height='82.3' rx='20.6' transform='rotate(2.4 42.3 336.8)' fill='%23ffffff' fill-opacity='0.031' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='109.8' y='295.0' width='75.7' height='75.7' rx='18.9' transform='rotate(-3.1 147.6 332.9)' fill='%23ffffff' fill-opacity='0.034' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='194.5' y='293.2' width='81.4' height='81.4' rx='20.3' transform='rotate(-1.7 235.2 333.9)' fill='%23ffffff' fill-opacity='0.045' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3Crect x='301.1' y='292.9' width='78.3' height='78.3' rx='19.6' transform='rotate(-1.6 340.3 332.0)' fill='%23ffffff' fill-opacity='0.040' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+@keyframes gs-backdrop-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(384px, 384px); }
+}
+
+@keyframes gs-backdrop-sway {
+  from { transform: rotate(-0.6deg) scale(1.01); }
+  to { transform: rotate(0.6deg) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gs-app::before { animation: none; }
+}
+
+/* Layout buttons: the one on screen shows a solid icon, the other is dimmed */
+.grid-button svg {
+  transition: opacity 0.2s ease;
+  opacity: 0.32;
+}
+
+.grid-button--active svg {
+  opacity: 1;
+}
+
+/* Mouse-and-arrow-keys app: no focus ring left on a clicked button while you browse with the keys */
+.gs-topbar button:focus,
+.gs-commandbar button:focus,
+.navigation-button:focus {
+  outline: none;
+}

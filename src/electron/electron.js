@@ -63,8 +63,13 @@ coversServer.listen(COVERS_PORT, () => {
   console.log(`Cover images server running on http://localhost:${COVERS_PORT}`);
 });
 
-// Utility to check file existence
-const fileExists = p => fs.existsSync(p) && fs.statSync(p).isFile();
+// Utility to check file existence (a macOS .app bundle is a folder, but counts as a launchable file)
+const fileExists = p => !!p && fs.existsSync(p) &&
+  (fs.statSync(p).isFile() || (process.platform === 'darwin' && p.endsWith('.app') && fs.statSync(p).isDirectory()));
+
+// Loose title match: "Pokémon Y" ↔ "Pokemon Y (USA).3ds"
+const normalizeTitle = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+const isRom = f => ['.3ds', '.cia', '.cci', '.3dsx'].some(ext => f.toLowerCase().endsWith(ext));
 
 const findEmu = platform => {
   if (platform === '3DS') {
@@ -84,6 +89,11 @@ function createWindow () {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
+    minWidth: 900,
+    minHeight: 600,
+    show: false,                 // shown on ready-to-show, so there's no white flash
+    backgroundColor: '#2c3e50',  // matches the dark theme backdrop
+    title: 'Game Stash',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -107,9 +117,11 @@ function createWindow () {
 
   // If packaged, load the built React files; otherwise load create-react-app dev server
   const target = app.isPackaged ? prodURL : devURL;
+  win.once('ready-to-show', () => win.show());
   win.loadURL(target);
 
-  if (!app.isPackaged) {
+  // DevTools only on request: GAME_STASH_DEVTOOLS=1 npm run dev
+  if (!app.isPackaged && process.env.GAME_STASH_DEVTOOLS) {
     win.webContents.openDevTools({ mode: 'detach' });
   }
 }
@@ -155,12 +167,17 @@ ipcMain.handle('fs:exists', (_e, absPath) => {
 
 // Launcher operations
 
-ipcMain.handle('launcher:autoDetect', (_e, title, platform) => {
-  const consoleDir = path.join(ROMS, platform.toLowerCase());
+ipcMain.handle('launcher:autoDetect', (_e, title, platform, romsDir) => {
+  // ROM folder from Settings first, then the project's roms/<platform> folder
+  const consoleDir = romsDir || settingsManager.getRomsPath() || path.join(ROMS, platform.toLowerCase());
   let romPath = null;
   if (fs.existsSync(consoleDir)) {
-    const allFiles = fs.readdirSync(consoleDir);
-    const match = allFiles.find(f => f.toLowerCase().includes(title.toLowerCase()));
+    const wanted = normalizeTitle(title);
+    const allFiles = fs.readdirSync(consoleDir).filter(isRom);
+    const match = allFiles.find(f => {
+      const name = normalizeTitle(path.parse(f).name.replace(/\(.*?\)|\[.*?\]/g, ''));
+      return name.length >= 3 && (name.includes(wanted) || wanted.includes(name));
+    });
     if (match) {
       romPath = path.join(consoleDir, match);
     }
@@ -175,7 +192,11 @@ ipcMain.handle('launcher:play', (_e, emuPath, romPath) => {
     return { ok: false, error: 'ROM or Emulator missing' };
   }
   try {
-    spawn(emuPath, [romPath], { detached: true, stdio: 'ignore' }).unref();
+    // macOS apps launch through `open`; everything else runs directly
+    const [cmd, args] = process.platform === 'darwin' && emuPath.endsWith('.app')
+      ? ['open', ['-a', emuPath, romPath]]
+      : [emuPath, [romPath]];
+    spawn(cmd, args, { detached: true, stdio: 'ignore' }).unref();
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err.message || 'Failed to spawn process' };

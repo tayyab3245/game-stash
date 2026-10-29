@@ -3,28 +3,35 @@ import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { ThemeProvider, useTheme } from "./features/theme";
 import GameShelf from "./core/gameShelf/GameShelf";
 import ThemeToggle from "./features/theme/ThemeToggle";
-import { ADD_MARKER } from "./core/gameShelf/constants";
+import { ADD_MARKER, MAX_GAME_SLOTS } from "./core/gameShelf/constants";
 import { GameFormModal, GameForm } from "./components/gameForm";
 import useGames, { Game } from "./hooks/useGames";
-import SoundManager from "./core/audio/SoundManager";
 // Import new architecture components
 import CommandBar from "./features/commandBar/CommandBar";
 import Header from "./features/header/Header";
 import VolumeButton from "./features/volume/VolumeButton";
+import { VolumeLevel } from "./features/volume/VolumeButton.logic";
+import SettingsPanel, { AppSettings, DEFAULT_APP_SETTINGS, SettingsButton } from "./features/settings/SettingsPanel";
 import GridButton from "./features/grid/GridButton";
+import { GridLogic, GridMode, MultiGridMode } from "./features/grid/GridButton.logic";
 import HelpTrigger from "./components/HelpTrigger";
 // Import theme styles
 import { lightStyles } from "./core/theme/light.styles";
 import { darkStyles } from "./core/theme/dark.styles";
 // Import custom cursor
 import { CustomCursor } from "./features/cursor";
+import SoundManager from "./core/audio/SoundManager";
+import "./core/theme/tokens.css";
+import "./Main.css";
 
-type VolumeLevel = 0 | 1 | 2 | 3;
 
 // Main content component that uses theme context
 function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark") => void }) {
   const { games, loadGames } = useGames();
   const { theme } = useTheme();
+
+  /* every button clicks on press and on release */
+  useEffect(() => SoundManager.attachButtonClicks(), []);
 
   /* wipe default browser margin that caused a white border */
   useLayoutEffect(() => {
@@ -34,42 +41,63 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
 
   /* ── state ── */
   const [selIdx, setSelIdx] = useState<number | null>(null);
+  const [addFocused, setAddFocused] = useState(false); // the "+" slot is selected
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [updating, setUpdating] = useState(false);
   const [flashOk, setFlashOk] = useState(false);
   const [editMode, _setEditMode] = useState(false);
-  const [volumeLevel, setVolumeLevel] = useState<VolumeLevel>(2);
-  const [rowMode, setRowMode] = useState<1 | 2>(1);
+  const [volumeLevel, setVolumeLevel] = useState<VolumeLevel>(3);
+  const [rowMode, setRowMode] = useState<GridMode>(1);
+  const [lastMultiMode, setLastMultiMode] = useState<MultiGridMode>(2); // what the grid button returns to
   const [editTitle, setEditTitle] = useState("");
   const [showHints, setShowHints] = useState(true);
   const [forceShowHints, setForceShowHints] = useState(false);
   const [hintMessage, setHintMessage] = useState<string | null>(null);
-  const [commandBarVisible, setCommandBarVisible] = useState(true);
-  const [gameTransitioning, setGameTransitioning] = useState(false);
-  const [isShelfMoving, setIsShelfMoving] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
+
+  /* ── app-wide settings live in the Electron settings file ── */
+  useEffect(() => {
+    (window as any).settingsAPI?.getAll().then((s: any) => setAppSettings({
+      showClock: s?.app?.showClock ?? true,
+      showHints: s?.app?.showHints ?? true,
+      music: s?.app?.music ?? true,
+      emulatorPath: s?.folderPaths?.emulator ?? '',
+      romsPath: s?.folderPaths?.roms ?? '',
+    }));
+  }, []);
+
+  const updateAppSettings = (patch: Partial<AppSettings>) => {
+    const next = { ...appSettings, ...patch };
+    setAppSettings(next);
+    (window as any).settingsAPI?.update({
+      app: { showClock: next.showClock, showHints: next.showHints, music: next.music },
+      folderPaths: { emulator: next.emulatorPath, roms: next.romsPath },
+    });
+  };
+
+  useEffect(() => SoundManager.setMusicEnabled(appSettings.music), [appSettings.music]);
 
   /* ── Environment detection ── */
   const isElectron = !!(window as any).gameAPI && !!(window as any).settingsAPI;
 
   /* ── Memoized textures array to ensure GameShelf re-renders ── */
   const [gameTextures, setGameTextures] = useState<string[]>([]);
+  // Servable cover URL per game id (imageUrl is a path like /covers/x.jpg the page can't load directly)
+  const [coverUrls, setCoverUrls] = useState<Record<number, string>>({});
   
   useEffect(() => {
     const updateTextures = async () => {
-      console.log('[Main] updateTextures called with', games.length, 'games, isElectron:', isElectron);
       
       if (isElectron) {
         // In Electron, convert imageUrl to file paths
         const texturePromises = games.map(async (g: Game) => {
           if (!g.imageUrl) {
-            console.log('[Main] Game has no imageUrl:', g.title);
             return null;
           }
           try {
-            console.log('[Main] Converting imageUrl for game:', g.title, 'imageUrl:', g.imageUrl);
             const fileUrl = await (window as any).launcherAPI.getImageUrl(g.imageUrl);
-            console.log('[Main] Got file URL:', fileUrl);
             return fileUrl;
           } catch (err) {
             console.warn('Failed to get image URL for game:', g.title, err);
@@ -78,18 +106,16 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
         });
         
         const resolvedTextures = await Promise.all(texturePromises);
+        setCoverUrls(Object.fromEntries(
+          games.map((g: Game, i) => [g.id, resolvedTextures[i]]).filter(([, url]) => Boolean(url)),
+        ));
         const validTextures = resolvedTextures.filter((url): url is string => Boolean(url));
-        console.log('[Main] GameShelf will render with', validTextures.length, 'game textures + 1 add button');
-        console.log('[Main] Valid textures:', validTextures);
-        const finalTextures = [...validTextures, ADD_MARKER];
-        console.log('[Main] Final textures array:', finalTextures);
-        console.log('[Main] Final textures count:', finalTextures.length, 'items');
-        setGameTextures(finalTextures);
+        // The "+" slot only shows while there's room left on the shelf
+        setGameTextures(validTextures.length < MAX_GAME_SLOTS ? [...validTextures, ADD_MARKER] : validTextures);
       } else {
         // In browser mode, use imageUrl directly (for legacy Express mode)
         const textures = games.map((g: Game) => g.imageUrl).filter((url): url is string => Boolean(url));
-        console.log('[Main] GameShelf will render with', textures.length, 'game textures + 1 add button');
-        setGameTextures([...textures, ADD_MARKER]);
+        setGameTextures(textures.length < MAX_GAME_SLOTS ? [...textures, ADD_MARKER] : textures);
       }
     };
 
@@ -98,48 +124,37 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
 
   /* ── load games on mount ── */
   useEffect(() => {
-    console.log(`Running in ${isElectron ? 'Electron' : 'Browser'} mode`);
     loadGames();
   }, [loadGames, isElectron]);
 
   /* ── Automatically select the first game when games are loaded ── */
   useEffect(() => {
-    if (games.length > 0 && selIdx === null) {
+    if (games.length > 0 && selIdx === null && !addFocused) {
       setSelIdx(0);
     }
-  }, [games.length, selIdx]);
+  }, [games.length, selIdx, addFocused]);
 
-  /* ── Handle command bar visibility based on shelf movement ── */
-  useEffect(() => {
-    console.log(`[Main] Command bar logic: selIdx=${selIdx}, modalOpen=${modalOpen}, isShelfMoving=${isShelfMoving}`);
-    
-    // Command bar should be visible when:
-    // 1. A game is selected AND
-    // 2. No modal is open AND  
-    // 3. The shelf is not moving
-    const shouldShowCommandBar = selIdx !== null && !modalOpen && !isShelfMoving;
-    
-    console.log(`[Main] Command bar should be: ${shouldShowCommandBar ? 'VISIBLE' : 'HIDDEN'}`);
-    setCommandBarVisible(shouldShowCommandBar);
-  }, [selIdx, modalOpen, isShelfMoving]);
+  /* ── Command bar stays put while browsing (no flicker on every move); hidden only behind the modal ── */
+  const commandBarVisible = (selIdx !== null || addFocused) && !modalOpen;
 
-  /* ── time display ── */
+  /* ── time display: tick on the minute boundary so the clock is never up to a minute behind ── */
   const [now, setNow] = useState(new Date());
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 60000);
-    return () => clearInterval(timer);
+    let timer: number;
+    const tick = () => {
+      const current = new Date();
+      setNow(current);
+      timer = window.setTimeout(tick, 60000 - (current.getSeconds() * 1000 + current.getMilliseconds()) + 50);
+    };
+    tick();
+    return () => clearTimeout(timer);
   }, []);
-
-  const timeStr = now.toLocaleString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric',
-    hour: 'numeric', minute: '2-digit', hour12: true,
-  });
 
   /* ── derived state ── */
   const selectedGame = selIdx !== null ? games[selIdx] : null;
-  const canLaunch = Boolean(selectedGame);
+  // On the "+" slot the big button adds a game instead of launching one
+  const canLaunch = Boolean(selectedGame) || addFocused;
   const editEnabled = Boolean(selectedGame);
-  const SHELF_H = "75vh";
 
   /* ── event handlers ── */
   const createOrUpdateGame = async (formData: GameForm) => {
@@ -192,26 +207,45 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
     }
   };
 
-  const handleLaunch = () => {
+  const handleLaunch = async () => {
+    if (addFocused) {
+      setModalMode("add");
+      setModalOpen(true);
+      return;
+    }
     if (!canLaunch || !selectedGame) return;
     const api = (window as any).launcherAPI;
     if (!api) {
       console.warn("launcherAPI not available in this environment.");
       return;
     }
-    
-    Promise.all([api.exists(selectedGame.romPath), api.exists(selectedGame.emuPath)]).then(
-      ([romOk, emuOk]) => {
-        if (!romOk || !emuOk) {
-          window.alert("ROM or Emulator missing");
-          return null;
-        }
-        return api.play(selectedGame.emuPath, selectedGame.romPath);
-      },
-    ).catch((err: any) => {
+
+    try {
+      // A game's own paths win; otherwise fall back to Settings (default emulator, ROM folder by title)
+      const emuPath = selectedGame.emuPath || appSettings.emulatorPath;
+      let romPath = selectedGame.romPath;
+      if (!romPath && appSettings.romsPath) {
+        romPath = (await api.autoDetect(selectedGame.title, '3DS', appSettings.romsPath))?.romPath || '';
+      }
+      if (!emuPath) {
+        window.alert("No emulator set. Choose a default one in Settings, or set one for this game with Edit.");
+        return;
+      }
+      if (!romPath) {
+        window.alert("No ROM found for this game. Pick its ROM with Edit, or choose your ROM folder in Settings.");
+        return;
+      }
+      const [romOk, emuOk] = await Promise.all([api.exists(romPath), api.exists(emuPath)]);
+      if (!romOk || !emuOk) {
+        window.alert(!emuOk ? "Emulator not found at its saved location." : "ROM not found at its saved location.");
+        return;
+      }
+      const result = await api.play(emuPath, romPath);
+      if (result && !result.ok) window.alert(`Couldn't launch: ${result.error}`);
+    } catch (err: any) {
       console.error('Launch error:', err);
       window.alert(`Error launching game: ${err.message}`);
-    });
+    }
   };
 
   const onCancel = () => {
@@ -221,7 +255,6 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
 
   // Function to manually trigger/toggle hints
   const triggerHints = () => {
-    console.log('Toggling hints manually from Main');
     if (selIdx !== null) { // Removed rowMode === 1 restriction to work in both grid modes
       if (showHints || forceShowHints) {
         // If hints are showing, turn them off
@@ -246,69 +279,70 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
     title: selectedGame.title,
     romPath: selectedGame.romPath,
     emuPath: selectedGame.emuPath,
-    coverUrl: selectedGame.imageUrl || "",
+    coverUrl: coverUrls[selectedGame.id] || "",
   } : {};
 
+  const styles = theme.mode === 'light' ? lightStyles : darkStyles;
+
   return (
-    <div style={{ 
+    <div className="gs-app" data-theme={theme.mode} style={{
       background: theme.mode === 'light' ? 'linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%)' : 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-      minHeight: '100vh',
-      fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
-      position: 'relative'
     }}>
       {/* Custom Ring Cursor */}
       <CustomCursor enabled={true} />
-      
-      {/* Left Button Group Background */}
-      <div style={theme.mode === 'light' ? lightStyles.leftButtonBackground.container : darkStyles.leftButtonBackground.container}></div>
-      
-      {/* Upper left: view-toggle buttons */}
-      <div style={theme.mode === 'light' ? lightStyles.gridButtons.container : darkStyles.gridButtons.container}>
-        {[1, 2].map((r) => (
-          <GridButton
-            key={r}
-            mode={r as 1 | 2}
-            filled={rowMode === r}
-            onChange={(newRowMode) => {
-              console.log(`[Main] Grid mode changed to: ${newRowMode}`);
-              setRowMode(newRowMode as 1 | 2);
-              // Command bar visibility will be handled by the movement detection
-            }}
+
+      {/* Top bar, 3DS-style: theme + layout buttons | title | time, volume, settings */}
+      <div className="gs-topbar">
+        <div style={styles.leftButtonBackground.container}>
+          <ThemeToggle onThemeChange={onThemeChange} />
+          <div style={styles.gridButtons.container}>
+            <GridButton
+              icon={1}
+              active={rowMode === 1}
+              title={GridLogic.getTitle(1)}
+              onClick={() => setRowMode(1)}
+            />
+            <GridButton
+              icon={rowMode === 1 ? lastMultiMode : rowMode}
+              active={rowMode !== 1}
+              title={rowMode === 1 ? GridLogic.getTitle(lastMultiMode) : 'Switch grid size'}
+              onClick={() => {
+                const next = GridLogic.nextMulti(rowMode, lastMultiMode);
+                setLastMultiMode(next);
+                setRowMode(next);
+              }}
+            />
+          </div>
+        </div>
+
+        <Header selectedGame={selectedGame} hidden={addFocused} />
+
+        <div style={styles.rightButtonBackground.container}>
+          {appSettings.showClock && (
+            <span style={styles.header.dateTime}>
+              {now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+            </span>
+          )}
+          <VolumeButton
+            level={volumeLevel}
+            onChange={setVolumeLevel}
           />
-        ))}
+          <SettingsButton open={settingsOpen} onClick={() => setSettingsOpen(open => !open)} />
+        </div>
       </div>
 
-      {/* Header */}
-      <Header selectedGame={selectedGame} currentTime={now} />
-      
-      {/* Right Button Group Background */}
-      <div style={theme.mode === 'light' ? lightStyles.rightButtonBackground.container : darkStyles.rightButtonBackground.container}></div>
-      
-      {/* Theme Toggle - using centralized styling */}
-      <ThemeToggle onThemeChange={onThemeChange} />
-
-      {/* Volume control - using centralized styling */}
-      <VolumeButton 
-        level={volumeLevel} 
-        onChange={setVolumeLevel} 
-      />
-
       {/* Game shelf */}
-      <div style={{ height: SHELF_H }}>
+      <div className="gs-shelf">
+        <div className="gs-shelf-inner">
         <GameShelf
           textures={gameTextures}
           width="100%"
           height="100%"
           rows={rowMode}
-          showHints={showHints}
+          showHints={showHints && appSettings.showHints}
           forceShowHints={forceShowHints}
           onHintsChange={(show) => setShowHints(show)}
-          onMovementChange={(isMoving) => {
-            console.log(`[Main] Shelf movement changed: ${isMoving ? 'MOVING' : 'STATIONARY'}`);
-            setIsShelfMoving(isMoving);
-          }}
           onSelect={(idx) => {
-            console.log(`[Main] onSelect called: idx=${idx}, current selIdx=${selIdx}`);
             if (idx === -1) {
               // Add button clicked
               setModalMode("add");
@@ -316,9 +350,13 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
               setSelIdx(null);
             } else {
               // Game selected
-              console.log(`[Main] Game selected: ${idx}`);
+              setAddFocused(false);
               setSelIdx(idx);
             }
+          }}
+          onAddSelected={() => {
+            setAddFocused(true);
+            setSelIdx(null);
           }}
           onLongPress={(idx) => {
             if (idx < games.length) {
@@ -330,46 +368,48 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
             }
           }}
         />
+        {/* Help Trigger Button - visible when a game is selected (unless hints are off in Settings) */}
+        <div className="gs-help">
+          <HelpTrigger
+            visible={selIdx !== null && !modalOpen && appSettings.showHints}
+            hintsActive={showHints || forceShowHints}
+            message={hintMessage}
+            theme={theme.mode}
+            onClick={triggerHints}
+          />
+        </div>
+        </div>
       </div>
 
       {/* Command bar */}
-      <CommandBar
-        onLaunch={handleLaunch}
-        onEdit={handleEdit}
-        canLaunch={canLaunch}
-        editEnabled={editEnabled}
-        visible={commandBarVisible}
-      />
+      <div className="gs-commandbar">
+        <CommandBar
+          onLaunch={handleLaunch}
+          onEdit={handleEdit}
+          canLaunch={canLaunch}
+          editEnabled={editEnabled}
+          launchLabel={addFocused ? 'ADD GAME' : 'LAUNCH'}
+          visible={commandBarVisible}
+        />
+      </div>
 
       {/* Add/Edit modal */}
+      {/* GameFormModal brings its own overlay; a second blurred layer here doubled the GPU cost */}
       {modalOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
           <GameFormModal
             key={modalMode + (editTitle || '')}
             mode={modalMode}
             initial={initialData}
             onSubmit={(data: GameForm) => {
-              SoundManager.playUISelect();
               createOrUpdateGame(data);
             }}
             onDismiss={() => {
-              SoundManager.playUIBack();
               onCancel();
             }}
             onDelete={
               modalMode === "edit" && selectedGame
                 ? async () => {
                     if (selIdx !== null) {
-                      SoundManager.playUIBack();
                       try {
                         const result = await (window as any).gameAPI.deleteGame(selectedGame.id);
                         if (result.success) {
@@ -387,18 +427,14 @@ function MainContent({ onThemeChange }: { onThemeChange: (mode: "light" | "dark"
                 : undefined
             }
           />
-        </div>
       )}
-      
-      {/* Help Trigger Button - visible when a game is selected in any grid mode */}
-      <HelpTrigger
-        visible={selIdx !== null && !modalOpen}
-        hintsActive={showHints || forceShowHints}
-        yOffset={690}
-        message={hintMessage}
-        theme={theme.mode}
-        onClick={triggerHints}
-      />
+      {settingsOpen && (
+        <SettingsPanel
+          settings={appSettings}
+          onChange={updateAppSettings}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -5,7 +5,6 @@ interface HelpTriggerProps {
   onClick: () => void;
   visible: boolean;
   hintsActive?: boolean; // Whether hints are currently showing
-  yOffset?: number; // Adjustable Y position offset from bottom
   message?: string | null; // Optional message to display next to button
   theme?: 'light' | 'dark'; // Theme for message styling
 }
@@ -14,24 +13,22 @@ const HelpTrigger: React.FC<HelpTriggerProps> = ({
   onClick, 
   visible, 
   hintsActive = false, 
-  yOffset = 20, 
   message = null,
   theme = 'dark'
 }) => {
   if (!visible) return null;
 
   return (
-    <>
+    <div style={{ position: 'relative' }}>
       <button 
         className={`help-trigger ${hintsActive ? 'help-trigger--active' : ''}`}
         onClick={onClick}
         aria-label={hintsActive ? "Hints enabled - click to disable" : "Hints disabled - click to enable"}
-        style={{ bottom: `${yOffset}px` }}
       >
         <svg 
           width="28" 
           height="28" 
-          viewBox="0 0 20 20" 
+          viewBox="-1.5 -1.5 23 23" 
           fill="none" 
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -57,9 +54,10 @@ const HelpTrigger: React.FC<HelpTriggerProps> = ({
         <div 
           className="help-trigger-message"
           style={{
-            position: 'fixed',
-            bottom: `${yOffset + 36}px`, // Position at button center (button bottom + half height)
-            right: '110px',
+            position: 'absolute',
+            top: '50%',
+            marginTop: -15,
+            right: 'calc(100% + 12px)',
             background: theme === 'light' ? 'rgba(20, 20, 20, 0.9)' : 'rgba(255, 255, 255, 0.9)',
             color: theme === 'light' ? '#ffffff' : '#141414',
             padding: '8px 12px',
@@ -94,7 +92,7 @@ const HelpTrigger: React.FC<HelpTriggerProps> = ({
           }} />
         </div>
       )}
-    </>
+    </div>
   );
 };
 

@@ -49,16 +49,23 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
   };
 
   /* ─── SVG constants ─── */
-  const uid = useId();
-  const VIEWBOX = 200;  // Keep large viewbox
+  const uid = useId().replace(/:/g, ''); // ':' breaks url(#…) references
+  const VIEWBOX = 200;
   const CENTER = VIEWBOX / 2;
-  const CORE_RADIUS = 35;  // Much larger sun to match volume button size
-  const MOON_SIZE = 35;    // Same size as sun for consistency
+  const BODY_RADIUS = 46;   // one round body: full disc = sun, eclipsed = moon
   const RAY_COUNT = 8;
-  const RAY_LEN = 24;   // Scaled up proportionally
-  const RAY_WID = 8;    // Scaled up proportionally  
-  const RAY_GAP = 8;    // Scaled up proportionally
-  const MASK_RADIUS = CORE_RADIUS + 1;
+  const RAY_INNER = 64;     // chubby, round-capped rays
+  const RAY_OUTER = 80;
+  const RAY_WIDTH = 15;
+  const isLight = mode === "light";
+  const SPRING = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+
+  // 4-point sparkle with soft, rounded points
+  const sparkle = (cx: number, cy: number, r: number) =>
+    `M${cx} ${cy - r} Q${cx + r * 0.18} ${cy - r * 0.18} ${cx + r} ${cy} ` +
+    `Q${cx + r * 0.18} ${cy + r * 0.18} ${cx} ${cy + r} ` +
+    `Q${cx - r * 0.18} ${cy + r * 0.18} ${cx - r} ${cy} ` +
+    `Q${cx - r * 0.18} ${cy - r * 0.18} ${cx} ${cy - r}Z`;
 
   /* the actual art, reused in both render modes */
   const SunMoonSVG = (
@@ -66,94 +73,97 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
       width={VIEWBOX}
       height={VIEWBOX}
       viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
-      style={{ display: "block", color: styles.iconColor }}
+      style={{ display: "block", color: styles.iconColor, overflow: "visible" }}
     >
-      {/* rays */}
-      <g
-        style={{
-          transformOrigin: `${CENTER}px ${CENTER}px`,
-          transform: mode === "light" ? "rotate(0deg)" : "rotate(45deg)",
-          opacity: mode === "light" ? 1 : 0,
-          transition: mode === "light"
-            ? "opacity 0.8s ease 0.7s, transform 0.6s ease 0.7s"
-            : "opacity 0.8s ease, transform 0.6s ease",
-        }}
-      >
-        {Array.from({ length: RAY_COUNT }).map((_, i) => {
-          // Calculate ray position to check if it would overlap with moon
-          const angle = (360 / RAY_COUNT) * i;
-          const rayStartRadius = CORE_RADIUS + RAY_GAP;
-          const rayEndRadius = rayStartRadius + RAY_LEN;
-          
-          // Only show ray if it doesn't extend into moon area when moon is visible
-          const shouldShowRay = mode === "light" || rayStartRadius > CORE_RADIUS;
-          
-          return (
-            <rect
-              key={i}
-              x={CENTER - RAY_WID / 2}
-              y={CENTER - CORE_RADIUS - RAY_GAP - RAY_LEN}
-              width={RAY_WID}
-              height={shouldShowRay ? RAY_LEN : Math.max(0, CORE_RADIUS - rayStartRadius)}
-              rx={RAY_WID / 2}
-              fill="currentColor"
-              transform={`rotate(${angle} ${CENTER} ${CENTER})`}
-              style={{
-                opacity: shouldShowRay ? 1 : 0,
-                transition: "opacity 0.8s ease",
-              }}
-            />
-          );
-        })}
-      </g>
-      
-      {/* sun core */}
-      <circle
-        cx={CENTER}
-        cy={CENTER}
-        r={CORE_RADIUS}
-        fill="currentColor"
-        style={{
-          opacity: mode === "light" ? 1 : 0,
-          transition: mode === "light" 
-            ? "opacity 0.3s ease 0.5s" 
-            : "opacity 0.3s ease",
-        }}
-      />
-      
-      {/* moon */}
       <defs>
-        <mask id={`crescentMask-${uid}`}>
+        {/* "Goo" filter: blur then sharpen alpha, which rounds the crescent's tips */}
+        <filter id={`soften-${uid}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="7" />
+          <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" />
+        </filter>
+        {/* Eclipse: a dark disc slides over the sun to carve out the moon */}
+        <mask id={`eclipse-${uid}`}>
           <rect width="100%" height="100%" fill="#fff" />
-          {/* Animated mask ellipse that slides in like an eclipse */}
-          <ellipse 
-            cx={mode === "light" ? CENTER + 80 : CENTER + 15} 
-            cy={mode === "light" ? CENTER - 10 : CENTER - 5} 
-            rx={25}
-            ry={30}
+          <circle
+            cx={isLight ? CENTER + 120 : CENTER + 30}
+            cy={isLight ? CENTER - 70 : CENTER - 22}
+            r={40}
             fill="#000"
             style={{
-              transition: mode === "light" 
-                ? "cx 0.5s ease, cy 0.5s ease" 
-                : "cx 0.8s ease 0.5s, cy 0.8s ease 0.5s",
+              transition: isLight
+                ? "cx 0.45s ease-in, cy 0.45s ease-in"
+                : `cx 0.7s ${SPRING} 0.25s, cy 0.7s ${SPRING} 0.25s`,
             }}
           />
         </mask>
       </defs>
-      
-      <circle
-        cx={CENTER}
-        cy={CENTER}
-        r={CORE_RADIUS}
-        fill="currentColor"
-        mask={`url(#crescentMask-${uid})`}
+
+      {/* rays: spin in and pop out with a little overshoot */}
+      <g
         style={{
-          opacity: mode === "light" ? 0 : 1,
-          transition: mode === "light" 
-            ? "opacity 0.3s ease 0.6s" 
-            : "opacity 0.3s ease",
+          transformOrigin: `${CENTER}px ${CENTER}px`,
+          transform: isLight ? "rotate(0deg) scale(1)" : "rotate(-60deg) scale(0.4)",
+          opacity: isLight ? 1 : 0,
+          transition: isLight
+            ? `transform 0.6s ${SPRING} 0.35s, opacity 0.3s ease 0.35s`
+            : "transform 0.35s ease-in, opacity 0.25s ease",
         }}
-      />
+      >
+        {Array.from({ length: RAY_COUNT }).map((_, i) => (
+          <line
+            key={i}
+            x1={CENTER}
+            y1={CENTER - RAY_INNER}
+            x2={CENTER}
+            y2={CENTER - RAY_OUTER}
+            stroke="currentColor"
+            strokeWidth={RAY_WIDTH}
+            strokeLinecap="round"
+            transform={`rotate(${(360 / RAY_COUNT) * i} ${CENTER} ${CENTER})`}
+          />
+        ))}
+      </g>
+
+      {/* sun ⇄ moon body: tilts a little as it turns into a moon */}
+      <g filter={`url(#soften-${uid})`}>
+        <circle
+          cx={CENTER}
+          cy={CENTER}
+          r={BODY_RADIUS}
+          fill="currentColor"
+          mask={`url(#eclipse-${uid})`}
+          style={{
+            transformOrigin: `${CENTER}px ${CENTER}px`,
+            transform: isLight ? "rotate(0deg) scale(1)" : "rotate(-18deg) scale(1.22)",
+            transition: `transform 0.7s ${SPRING} 0.2s`,
+          }}
+        />
+      </g>
+
+      {/* twinkling sparkles keep the moon company */}
+      {[
+        { cx: CENTER + 56, cy: CENTER - 46, r: 21, delay: 0.55 },
+        { cx: CENTER + 70, cy: CENTER + 10, r: 13, delay: 0.7 },
+      ].map((st, i) => (
+        <g
+          key={i}
+          style={{
+            transformOrigin: `${st.cx}px ${st.cy}px`,
+            transform: isLight ? "scale(0) rotate(-90deg)" : "scale(1) rotate(0deg)",
+            opacity: isLight ? 0 : 1,
+            transition: isLight
+              ? "transform 0.25s ease-in, opacity 0.2s ease"
+              : `transform 0.5s ${SPRING} ${st.delay}s, opacity 0.3s ease ${st.delay}s`,
+          }}
+        >
+          <path
+            d={sparkle(st.cx, st.cy, st.r)}
+            fill="currentColor"
+            className="theme-toggle__sparkle"
+            style={{ animationDelay: `${i * 0.9}s` }}
+          />
+        </g>
+      ))}
     </svg>
   );
 

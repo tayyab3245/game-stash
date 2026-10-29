@@ -1,9 +1,8 @@
 // CommandBar - Main action buttons with centralized styling
-import React, { useState } from "react";
+import React from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { lightStyles } from "../../core/theme/light.styles";
 import { darkStyles } from "../../core/theme/dark.styles";
-import SoundManager from "../../core/audio/SoundManager";
 
 export interface CommandBarProps {
   onLaunch: () => void;
@@ -11,6 +10,7 @@ export interface CommandBarProps {
   canLaunch?: boolean;
   editEnabled?: boolean;
   visible?: boolean; // New prop to control visibility
+  launchLabel?: string; // e.g. "ADD GAME" when the + slot is selected
 }
 
 const CommandBar: React.FC<CommandBarProps> = ({
@@ -19,12 +19,10 @@ const CommandBar: React.FC<CommandBarProps> = ({
   canLaunch = false,
   editEnabled = false,
   visible = true,
+  launchLabel = 'LAUNCH',
 }) => {
-  const { theme, mode } = useTheme();
+  const { mode } = useTheme();
   const styles = mode === 'light' ? lightStyles.commandBar : darkStyles.commandBar;
-
-  // Play click sound
-  const blip = () => SoundManager.playPan();
 
   // Button press effect handlers
   const handleMouseDown = (buttonRef: HTMLButtonElement, isEnabled: boolean) => {
@@ -46,9 +44,12 @@ const CommandBar: React.FC<CommandBarProps> = ({
   };
 
   // Edit button - left third
+  // Disabled halves stay solid (the animated backdrop must not show through); only the label dims
+  const disabledStyle = { ...styles.buttonDisabled, opacity: 1, cursor: 'default' };
+
   const editButtonStyle = {
     ...styles.button,
-    ...(editEnabled ? {} : styles.buttonDisabled),
+    ...(editEnabled ? {} : disabledStyle),
     flex: 1,
     borderTopLeftRadius: '40px',
     borderBottomLeftRadius: '40px',
@@ -60,7 +61,7 @@ const CommandBar: React.FC<CommandBarProps> = ({
   // Launch button - right two-thirds
   const launchButtonStyle = {
     ...styles.button,
-    ...(canLaunch ? {} : styles.buttonDisabled),
+    ...(canLaunch ? {} : disabledStyle),
     flex: 2,
     borderTopRightRadius: '60px',
     borderBottomRightRadius: '60px',
@@ -72,16 +73,14 @@ const CommandBar: React.FC<CommandBarProps> = ({
   // Container styling with slide animation
   const containerStyle = {
     ...styles.container,
-    position: 'fixed' as const,
-    bottom: -15,
-    left: 0,
-    right: 0,
-    height: '72px',
+    position: 'relative' as const,
+    height: 'clamp(52px, 8vh, 68px)',
     display: 'flex',
     gap: '1px',
-    padding: '0 20px 20px 20px',
+    padding: '0 var(--gs-edge, 16px) var(--gs-edge, 16px)',
+    boxSizing: 'content-box' as const,
     zIndex: 1000,
-    transform: visible ? 'translateY(0px)' : 'translateY(100px)',
+    transform: visible ? 'translateY(0px)' : 'translateY(24px)',
     opacity: visible ? 1 : 0,
     transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease',
     pointerEvents: (visible ? 'auto' : 'none') as 'auto' | 'none',
@@ -89,14 +88,12 @@ const CommandBar: React.FC<CommandBarProps> = ({
 
   const handleEdit = () => {
     if (editEnabled) {
-      blip();
       onEdit();
     }
   };
 
   const handleLaunch = () => {
     if (canLaunch) {
-      blip();
       onLaunch();
     }
   };
@@ -112,7 +109,7 @@ const CommandBar: React.FC<CommandBarProps> = ({
         onMouseUp={(e) => handleMouseUp(e.currentTarget, editEnabled)}
         onMouseLeave={(e) => handleMouseLeave(e.currentTarget, editEnabled)}
       >
-        EDIT
+        <span style={{ opacity: editEnabled ? 1 : 0.4 }}>EDIT</span>
       </button>
 
       {/* LAUNCH – right two-thirds */}
@@ -124,7 +121,7 @@ const CommandBar: React.FC<CommandBarProps> = ({
         onMouseUp={(e) => handleMouseUp(e.currentTarget, canLaunch)}
         onMouseLeave={(e) => handleMouseLeave(e.currentTarget, canLaunch)}
       >
-        LAUNCH
+        <span style={{ opacity: canLaunch ? 1 : 0.4 }}>{launchLabel}</span>
       </button>
     </div>
   );

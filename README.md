@@ -36,7 +36,7 @@ Built with React, TypeScript, Three.js and Electron. Runs on macOS and Windows.
 
 Get the latest build from the [Releases page](https://github.com/tayyab3245/game-stash/releases/latest).
 
-- **macOS (Apple Silicon):** `Game Stash-1.1.0-arm64.dmg`. The app isn't signed with an Apple developer certificate, so the first time, right-click it and choose **Open**.
+- **macOS (Apple Silicon):** `Game.Stash-1.1.0-arm64.dmg`. The app isn't signed with an Apple developer certificate, so the first time, right-click it and choose **Open**.
 - **Windows:** build it from source (below).
 
 ## Run it locally
